@@ -31,7 +31,7 @@ CAMPOS = [  # (atributo, rótulo na tela, explicação mostrada no "?" da regra 
      "- Usuário escolheu 25% de margem\n"
      "- Usuário escolheu 3 meses no campo Meses\n\n"
      "Então o ritmo de execução prevista será de 1,25%.\n\n"
-     "**Resultado:** execução x (1 + margem) x meses"),
+     "**Resultado:** execução real x (1 + margem) x meses"),
     ("simplif", "Simplificado (%)",
      "Para os contratos do regime simplificado, a necessidade orçamentária prevê um valor padrão de "
      "necessidade orçamentária.\n\n"
