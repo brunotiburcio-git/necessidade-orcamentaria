@@ -262,8 +262,8 @@ function iniciarApp(D, nomeUsuario) {
     });
   }
 
-  blocos.addEventListener("input", function (ev) {
-    var t = ev.target;
+  // aplica o valor de um campo/chave e recalcula; chamado ao digitar, ao apertar Enter e ao sair do campo
+  function aplicar(t) {
     if (t.dataset.campo) {
       var c = CAMPOS.filter(function (x) { return x.id === t.dataset.campo; })[0], v = lerNumero(t.value);
       if (v === null || (c.id === "meses" && v < 1)) { t.classList.add("invalido"); return; }
@@ -276,9 +276,14 @@ function iniciarApp(D, nomeUsuario) {
       t.closest(".bloco").querySelectorAll("input[data-campo]").forEach(function (i) { i.disabled = !t.checked; });
       atualizar();
     }
+  }
+  blocos.addEventListener("input", function (ev) { aplicar(ev.target); });
+  blocos.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" && ev.target.dataset.campo) { ev.preventDefault(); aplicar(ev.target); ev.target.blur(); }
   });
-  blocos.addEventListener("change", function (ev) {  // ao sair do campo, mostra o número no formato padrão
+  blocos.addEventListener("change", function (ev) {  // ao sair do campo: aplica e mostra o número no formato padrão
     var t = ev.target;
+    aplicar(t);
     if (t.dataset.campo && !t.classList.contains("invalido")) {
       var c = CAMPOS.filter(function (x) { return x.id === t.dataset.campo; })[0], v = estado.regras[t.dataset.regra][c.id];
       t.value = fmtCampo(c, c.pct ? Motor.paraPct(v) : v);
