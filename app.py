@@ -49,6 +49,8 @@ if (!window.__temaNecorc) {
 }
 </script>""", unsafe_allow_javascript=True)
 COR_NAO = "#ef4444"  # vermelho legível nos dois modos
+# linhas de total: fundo verde translúcido + negrito (legível no modo claro e no escuro)
+ESTILO_TOTAL = "background-color: rgba(74, 222, 128, 0.22); font-weight: 700"
 
 
 @st.cache_data(show_spinner="Lendo a planilha...")
@@ -191,7 +193,10 @@ st.subheader("Resumo")
 st.markdown('<div class="legenda">Por secretaria (valores em milhões)</div>', unsafe_allow_html=True)
 df_sec = tabela_secretarias(entrada, linhas, parametros)
 df_sec = df_sec.rename_axis("Item").reset_index()  # rótulos como coluna comum (mesma cor do restante)
-st.columns(LARGURA_TABELAS)[0].dataframe(df_sec.style.format(fmt_br), width="stretch", hide_index=True)
+FINAIS = df_sec.index[-2:]  # Nec. orçamentária final e a versão bln_execucao: linhas de total
+estilo_sec = (df_sec.style.format(fmt_br)
+              .apply(lambda r: [ESTILO_TOTAL if r.name in FINAIS else ""] * len(r), axis=1))
+st.columns(LARGURA_TABELAS)[0].dataframe(estilo_sec, width="stretch", hide_index=True)
 
 st.markdown('<div class="legenda" style="margin-top:0.8rem">Por ação orçamentária (valores em milhões)</div>',
             unsafe_allow_html=True)
