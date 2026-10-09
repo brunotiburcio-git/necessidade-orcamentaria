@@ -1,3 +1,4 @@
 openpyxl>=3.1
 pandas>=2.0
 streamlit>=1.60
+cryptography>=41  # só para gerar a versão web (gerar_web.py)

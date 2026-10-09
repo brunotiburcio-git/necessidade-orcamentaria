@@ -30,8 +30,9 @@
   --grid: rgba(255, 255, 255, .025); color-scheme: dark;
 }
 
+[hidden] { display: none !important; }
 html { font-size: 18px; }
-body {
+body { min-height: 100vh;
   background-color: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.45;
   background-image:
     radial-gradient(circle at 15% 0%, var(--accent-soft), transparent 40%),
@@ -122,18 +123,44 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
 .rodape { color: var(--muted); font-size: .8rem; max-width: 1500px; }
 .aviso { position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: 1rem; background: var(--surface); border: 1px solid var(--accent);
          color: var(--text); padding: .5rem .9rem; border-radius: 8px; font-size: .85rem; }
+/* tela de entrada */
+.entrada { min-height: 80vh; display: grid; place-items: center; padding-inline: 16px; }
+.entrada form { width: min(24rem, 100%); background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent);
+                border-radius: var(--radius); padding: 1.4rem 1.4rem 1.5rem; display: grid; gap: .9rem; }
+.entrada h1 { font-size: 1.45rem; }
+.entrada label { display: grid; gap: .3rem; font-size: .9rem; color: var(--muted); }
+.entrada input { font: inherit; padding: .55rem .7rem; border-radius: 7px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+.entrada input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.entrar { font: inherit; font-weight: 700; padding: .6rem; border: 0; border-radius: 8px; cursor: pointer; color: #0b0f19;
+          background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.entrar:disabled { opacity: .6; cursor: wait; }
+.erro { color: var(--bad); font-size: .88rem; margin: 0; min-height: 1.2em; }
+.usuario { display: flex; align-items: center; gap: .6rem; font-size: .85rem; color: var(--muted); }
+.lado { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
 @media (prefers-reduced-motion: reduce) { .chave input, .chave input::after { transition: none; } }
 </style>
 
-<div class="pagina">
+<div class="entrada" id="entrada">
+  <form id="form-entrada" autocomplete="on">
+    <h1>Necessidade orçamentária</h1>
+    <label for="login-usuario">Usuário <input id="login-usuario" name="usuario" autocomplete="username" required></label>
+    <label for="login-senha">Senha <input id="login-senha" name="senha" type="password" autocomplete="current-password" required></label>
+    <p class="erro" id="login-erro" role="alert"></p>
+    <button type="submit" class="entrar" id="login-entrar">Entrar</button>
+  </form>
+</div>
+<div class="pagina" id="pagina" hidden>
   <header class="topo">
     <div>
       <h1>Necessidade orçamentária: modelo preditivo</h1>
       <div class="base" id="base"></div>
     </div>
-    <div class="tema" role="group" aria-label="Tema">
-      <button type="button" id="tema-claro" data-tema="light">☀ Claro</button>
-      <button type="button" id="tema-escuro" data-tema="dark">☾ Escuro</button>
+    <div class="lado">
+      <div class="usuario"><span id="usuario-nome"></span><button type="button" class="btn" id="sair">Sair</button></div>
+      <div class="tema" role="group" aria-label="Tema">
+        <button type="button" id="tema-claro" data-tema="light">☀ Claro</button>
+        <button type="button" id="tema-escuro" data-tema="dark">☾ Escuro</button>
+      </div>
     </div>
   </header>
 
@@ -159,8 +186,10 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
 
 <script>/*MOTOR*/</script>
 <script>
-var D = /*DADOS*/;
-(function () {
+var PROTEGIDO = /*DADOS*/;
+try { var temaSalvo = localStorage.getItem("necorc-tema"); if (temaSalvo) document.documentElement.dataset.theme = temaSalvo; } catch (e) {}
+
+function iniciarApp(D, nomeUsuario) {
   "use strict";
   var SECS = D.secretarias;
   var CAMPOS = [  // ordem na tela: os 3 principais primeiro
@@ -324,15 +353,69 @@ var D = /*DADOS*/;
       marcarTema();
     });
   });
-  try { var salvo = localStorage.getItem("necorc-tema"); if (salvo) document.documentElement.dataset.theme = salvo; } catch (e) {}
   marcarTema();
   if (window.matchMedia) { try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", marcarTema); } catch (e) {} }
 
   document.getElementById("base").innerHTML = "Base: <b>" + D.arquivo + "</b> · " +
     D.contratos.toLocaleString("pt-BR") + " contratos · atualizada em " + D.gerado_em;
 
+  document.getElementById("usuario-nome").textContent = nomeUsuario;
   estado = estadoInicial();
   montarBlocos();
   atualizar();
+}
+
+// ---------- entrada: usuário e senha abrem os dados cifrados ----------
+(function () {
+  "use strict";
+  var CHAVE_SESSAO = "necorc-sessao";
+  function b64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+  function b64de(bytes) { var s = ""; bytes.forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s); }
+  async function sha256(txt) {
+    var h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(txt)));
+    return Array.from(h).map(function (x) { return x.toString(16).padStart(2, "0"); }).join("");
+  }
+  async function abrirDados(chaveBruta) {
+    var k = await crypto.subtle.importKey("raw", chaveBruta, "AES-GCM", false, ["decrypt"]);
+    var texto = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(PROTEGIDO.dados.iv) }, k, b64(PROTEGIDO.dados.ct));
+    return JSON.parse(new TextDecoder().decode(texto));
+  }
+  async function entrar(usuario, senha) {
+    var e = PROTEGIDO.chaves[await sha256(usuario.trim().toLowerCase())];
+    if (!e) throw new Error("usuario");
+    var base = await crypto.subtle.importKey("raw", new TextEncoder().encode(senha.trim()), "PBKDF2", false, ["deriveKey"]);
+    var kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(e.salt), iterations: PROTEGIDO.iter, hash: "SHA-256" },
+                                            base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    var conteudo = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(e.iv) }, kek, b64(e.ct));  // senha errada falha aqui
+    return JSON.parse(new TextDecoder().decode(conteudo));  // { k: chave dos dados, nome }
+  }
+  async function mostrar(acesso) {
+    var D = await abrirDados(b64(acesso.k));
+    document.getElementById("entrada").hidden = true;
+    document.getElementById("pagina").hidden = false;
+    iniciarApp(D, acesso.nome);
+  }
+
+  var form = document.getElementById("form-entrada"), erro = document.getElementById("login-erro"), botao = document.getElementById("login-entrar");
+  form.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    erro.textContent = ""; botao.disabled = true; botao.textContent = "Entrando...";
+    try {
+      var acesso = await entrar(document.getElementById("login-usuario").value, document.getElementById("login-senha").value);
+      try { sessionStorage.setItem(CHAVE_SESSAO, JSON.stringify(acesso)); } catch (e) {}
+      await mostrar(acesso);
+    } catch (e) {
+      erro.textContent = "Usuário ou senha inválidos.";
+      botao.disabled = false; botao.textContent = "Entrar";
+    }
+  });
+  document.getElementById("sair").addEventListener("click", function () {
+    try { sessionStorage.removeItem(CHAVE_SESSAO); } catch (e) {}
+    location.reload();
+  });
+
+  var salvo = null;
+  try { salvo = JSON.parse(sessionStorage.getItem(CHAVE_SESSAO) || "null"); } catch (e) {}
+  if (salvo) mostrar(salvo).catch(function () { try { sessionStorage.removeItem(CHAVE_SESSAO); } catch (e) {} });
 })();
 </script>

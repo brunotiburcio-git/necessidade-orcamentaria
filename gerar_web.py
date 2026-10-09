@@ -1,16 +1,30 @@
 """Gera a versão web (uma página HTML só) com os dados da planilha mais recente da pasta dados/.
 
-Uso:  python gerar_web.py [caminho_da_planilha.xlsx]
+Uso:  python gerar_web.py [caminho_da_planilha.xlsx] [caminho_usuarios.xlsx]
 Saída: web/saida/necorc.html (é esse arquivo que é publicado como Artifact)
+
+Os dados vão cifrados (AES-GCM) dentro da página. Cada usuário de usuarios.xlsx recebe uma cópia da
+chave dos dados cifrada com a própria senha (PBKDF2), então sem um usuário e senha válidos a página
+não consegue ler os números.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
 from necorc.artifact import exportar
 from necorc.leitura import ler_planilha
+from necorc.usuarios import ler_usuarios
+
+ITERACOES = 250_000
 
 RAIZ = Path(__file__).resolve().parent
 CONFIG = json.loads((RAIZ / "config.json").read_text(encoding="utf-8"))
@@ -26,17 +40,44 @@ def planilha_mais_recente() -> Path:
     return max(arquivos, key=lambda a: a.stat().st_mtime)
 
 
+def _b64(b: bytes) -> str:
+    return base64.b64encode(b).decode()
+
+
+def proteger(dados: dict, usuarios) -> dict:
+    chave = AESGCM.generate_key(bit_length=256)
+    iv = os.urandom(12)
+    texto = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).encode()
+    protegido = {"iter": ITERACOES, "dados": {"iv": _b64(iv), "ct": _b64(AESGCM(chave).encrypt(iv, texto, None))},
+                 "chaves": {}}
+    for u in usuarios.values():
+        if not u.senha:
+            continue
+        sal, iv_u = os.urandom(16), os.urandom(12)
+        kek = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=sal, iterations=ITERACOES).derive(u.senha.encode())
+        conteudo = json.dumps({"k": _b64(chave), "nome": u.nome}, ensure_ascii=False).encode()
+        protegido["chaves"][hashlib.sha256(u.usuario.encode()).hexdigest()] = {
+            "salt": _b64(sal), "iv": _b64(iv_u), "ct": _b64(AESGCM(kek).encrypt(iv_u, conteudo, None))}
+    if not protegido["chaves"]:
+        sys.exit("Nenhum usuário com senha em usuarios.xlsx")
+    return protegido
+
+
 def main():
     caminho = Path(sys.argv[1]) if len(sys.argv) > 1 else planilha_mais_recente()
+    arq_usuarios = (Path(sys.argv[2]) if len(sys.argv) > 2
+                    else RAIZ / CONFIG.get("pasta_planilhas", "dados") / CONFIG.get("arquivo_usuarios", "usuarios.xlsx"))
+    usuarios = ler_usuarios(arq_usuarios)
     dados = exportar(ler_planilha(caminho))
     pagina = (RAIZ / "web" / "pagina.html").read_text(encoding="utf-8")
     motor = (RAIZ / "web" / "motor.js").read_text(encoding="utf-8")
     pagina = pagina.replace("/*MOTOR*/", motor).replace(
-        "/*DADOS*/", json.dumps(dados, ensure_ascii=False, separators=(",", ":")))
+        "/*DADOS*/", json.dumps(proteger(dados, usuarios), separators=(",", ":")))
     saida = RAIZ / "web" / "saida" / "necorc.html"
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(pagina, encoding="utf-8")
-    print(f"{saida}  ({saida.stat().st_size / 1e6:.2f} MB, {dados['contratos']} contratos de {caminho.name})")
+    print(f"{saida}  ({saida.stat().st_size / 1e6:.2f} MB, {dados['contratos']} contratos de {caminho.name}, "
+          f"{len(usuarios)} usuários)")
 
 
 if __name__ == "__main__":
