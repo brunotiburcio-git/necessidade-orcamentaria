@@ -2,6 +2,8 @@
 
 Modelo preditivo de necessidade orçamentária - Ministério das Cidades.
 
+**Versão 1.0** (09/10/2026)
+
 Sistema local em Python que lê a planilha atualizada (o mesmo arquivo do Excel), recalcula o modelo
 preditivo com as fórmulas do Excel reescritas em Python e mostra as tabelas resumo da aba
 "parametros e resultados gerais". O usuário só altera os parâmetros; as bases continuam sendo
