@@ -101,6 +101,8 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 .acoes-geral { display: flex; justify-content: flex-end; }
 .btn { font: inherit; font-size: .8rem; padding: .35rem .8rem; border-radius: 7px; border: 1px solid var(--line-strong);
        background: var(--surface); color: var(--text); cursor: pointer; }
+.exportar { margin-top: .9rem; }
+.exportar .btn { font-size: .95rem; padding: .55rem 1.1rem; border-color: var(--accent); color: var(--accent); }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* tabelas */
@@ -179,11 +181,13 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
       <button type="button" class="btn" id="copiar-acao">Copiar tabela</button></div>
     <div class="tabela-box"><table id="tab-acao"></table></div>
     <div class="metricas" id="metricas"></div>
-    <p class="rodape">Os cálculos reproduzem as fórmulas da planilha do modelo preditivo. "Copiar tabela" copia os valores para colar no Excel.</p>
+    <div class="exportar"><button type="button" class="btn" id="exportar">Gerar arquivo Excel com os resultados</button></div>
+    <p class="rodape">Os cálculos reproduzem as fórmulas da planilha do modelo preditivo. "Copiar tabela" copia os valores para colar no Excel. O arquivo Excel traz os resumos, os parâmetros usados e o detalhe de todos os contratos.</p>
   </section>
 </div>
 <div class="aviso" id="aviso" hidden></div>
 
+<script>/*XLSX*/</script>
 <script>/*MOTOR*/</script>
 <script>
 var PROTEGIDO = /*DADOS*/;
@@ -341,6 +345,79 @@ function iniciarApp(D, nomeUsuario) {
   document.getElementById("copiar-sec").addEventListener("click", function () { copiar(tsvSec); });
   document.getElementById("copiar-acao").addEventListener("click", function () { copiar(tsvAcao); });
 
+  // ---------- exportar: mesmas 4 abas do arquivo gerado pela versão Python (necorc/exportar.py) ----------
+  var PARAM_ORDEM = ["margem_exec", "simplif", "piso", "teto", "meses"];
+  function serialExcel(iso) {  // data do texto ISO -> número de série do Excel (sem fuso)
+    var m = iso.match(/^(\d+)-(\d+)-(\d+)(?:T(\d+):(\d+):(\d+))?/);
+    return (Date.UTC(+m[1], m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) - Date.UTC(1899, 11, 30)) / 86400000;
+  }
+  function gerarExcel() {
+    var p = parametros(), r = Motor.calcular(D, p);
+    var sec = Motor.resumoSecretarias(D, r, p), ac = Motor.resumoAcoes(D, r);
+    var wb = XLSX.utils.book_new();
+
+    var aba1 = [[null].concat(D.nomes_resumo, ["MCID"])];
+    sec.forEach(function (it) { aba1.push([it.rotulo].concat(it.valores, [it.total])); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aba1), "resumo secretarias");
+
+    var aba2 = [["Descrição ação", "cod ação", "nec orc final", "disponível LOA", "Dentro disp", "Saldo"]];
+    ac.itens.forEach(function (it) { aba2.push([it.descricao, it.codigo, it.nec, it.disp, it.dentro, it.saldo]); });
+    aba2.push([], ["item", "valor"], ["TOTAL nec orc final", ac.totalNec], ["TOTAL disponível LOA", ac.totalDisp],
+              ["Faltando", ac.faltando], ["Sobrando", ac.sobrando]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aba2), "resumo ações");
+
+    var aba3 = [["regra", "parâmetro", "valor"]];
+    PARAM_ORDEM.forEach(function (k) { aba3.push(["geral", k, p.geral[k]]); });
+    SECS.forEach(function (s) {
+      PARAM_ORDEM.forEach(function (k) { aba3.push([s, k, p.secretaria[s][k]]); });
+      aba3.push([s, "bln_secretaria", p.bln_secretaria[s]]);
+    });
+    aba3.push(["geral", "bln_execucao", p.bln_execucao]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aba3), "parâmetros usados");
+
+    var det = Motor.detalhe(D, p), n = D.contratos, aba4 = [det.colunas], datas = [];
+    det.colunas.forEach(function (nome, j) { if (det.datas.indexOf(nome) >= 0) datas.push(j); });
+    for (var i = 0; i < n; i++) {
+      var lin = new Array(det.colunas.length);
+      for (var j = 0; j < lin.length; j++) lin[j] = det.valores[j][i];
+      datas.forEach(function (j) { if (lin[j] != null) lin[j] = serialExcel(lin[j]); });
+      aba4.push(lin);
+    }
+    var ws = XLSX.utils.aoa_to_sheet(aba4);
+    datas.forEach(function (j) {
+      for (var i = 1; i <= n; i++) { var cel = ws[XLSX.utils.encode_cell({ r: i, c: j })]; if (cel) cel.z = "dd/mm/yyyy"; }
+    });
+    XLSX.utils.book_append_sheet(wb, ws, "detalhe contratos");
+    return new Uint8Array(XLSX.write(wb, { type: "array", bookType: "xlsx", compression: true }));
+  }
+  function nomeArquivo() {
+    var d = new Date(), z = function (x) { return String(x).padStart(2, "0"); };
+    return "necorc_resultado_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + "_" + z(d.getHours()) + z(d.getMinutes()) + ".xlsx";
+  }
+  var botaoExportar = document.getElementById("exportar");
+  botaoExportar.addEventListener("click", async function () {
+    var rotulo = botaoExportar.textContent;
+    botaoExportar.disabled = true; botaoExportar.textContent = "Gerando arquivo...";
+    try {
+      await new Promise(function (ok) { setTimeout(ok, 30); });  // deixa o texto do botão aparecer
+      var bytes = gerarExcel(), nome = nomeArquivo();
+      var downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+      if (downloads) {
+        try { await downloads.save({ filename: nome, data: new Blob([bytes]) }); avisar("Arquivo Excel gerado."); }
+        catch (e) { if (e && e.code !== "declined") avisar("Não foi possível salvar o arquivo (" + (e.code || "erro") + ")."); }
+      } else {  // fora do Claude (arquivo aberto direto no navegador)
+        var url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+        var a = document.createElement("a"); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+      }
+    } catch (e) {
+      avisar("Não foi possível gerar o arquivo Excel.");
+      if (window.console) console.error(e);
+    } finally {
+      botaoExportar.disabled = false; botaoExportar.textContent = rotulo;
+    }
+  });
+
   function temaAtual() {
     var t = document.documentElement.dataset.theme;
     if (t) return t;
@@ -382,8 +459,9 @@ function iniciarApp(D, nomeUsuario) {
   }
   async function abrirDados(chaveBruta) {
     var k = await crypto.subtle.importKey("raw", chaveBruta, "AES-GCM", false, ["decrypt"]);
-    var texto = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(PROTEGIDO.dados.iv) }, k, b64(PROTEGIDO.dados.ct));
-    return JSON.parse(new TextDecoder().decode(texto));
+    var gz = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(PROTEGIDO.dados.iv) }, k, b64(PROTEGIDO.dados.ct));
+    var texto = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    return JSON.parse(texto);
   }
   async function entrar(usuario, senha) {
     var e = PROTEGIDO.chaves[await sha256(usuario.trim().toLowerCase())];

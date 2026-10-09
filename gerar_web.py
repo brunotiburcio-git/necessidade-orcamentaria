@@ -10,6 +10,7 @@ não consegue ler os números.
 from __future__ import annotations
 
 import base64
+import gzip
 import hashlib
 import json
 import os
@@ -44,10 +45,16 @@ def _b64(b: bytes) -> str:
     return base64.b64encode(b).decode()
 
 
+def _escape_js(c: str) -> str:
+    """Caractere fora do ASCII como escape \\uXXXX do JavaScript (par substituto acima de U+FFFF)."""
+    b = c.encode("utf-16-be")
+    return "".join(f"\\u{int.from_bytes(b[i:i + 2], 'big'):04x}" for i in range(0, len(b), 2))
+
+
 def proteger(dados: dict, usuarios) -> dict:
     chave = AESGCM.generate_key(bit_length=256)
     iv = os.urandom(12)
-    texto = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).encode()
+    texto = gzip.compress(json.dumps(dados, ensure_ascii=False, separators=(",", ":")).encode(), mtime=0)
     protegido = {"iter": ITERACOES, "dados": {"iv": _b64(iv), "ct": _b64(AESGCM(chave).encrypt(iv, texto, None))},
                  "chaves": {}}
     for u in usuarios.values():
@@ -71,8 +78,12 @@ def main():
     dados = exportar(ler_planilha(caminho))
     pagina = (RAIZ / "web" / "pagina.html").read_text(encoding="utf-8")
     motor = (RAIZ / "web" / "motor.js").read_text(encoding="utf-8")
-    pagina = pagina.replace("/*MOTOR*/", motor).replace(
-        "/*DADOS*/", json.dumps(proteger(dados, usuarios), separators=(",", ":")))
+    # SheetJS 0.18.5 (versão mini: só o que a exportação usa); caracteres especiais viram \uXXXX
+    xlsx = (RAIZ / "web" / "vendor" / "xlsx.mini.min.js").read_text(encoding="utf-8")
+    xlsx = "".join(c if ord(c) < 128 else _escape_js(c) for c in xlsx)
+    pagina = pagina.replace("/*MOTOR*/", motor, 1).replace(
+        "/*DADOS*/", json.dumps(proteger(dados, usuarios), separators=(",", ":")), 1)
+    pagina = pagina.replace("/*XLSX*/", xlsx, 1)  # por último: o código da biblioteca não passa pelas outras trocas
     saida = RAIZ / "web" / "saida" / "necorc.html"
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(pagina, encoding="utf-8")

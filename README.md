@@ -105,3 +105,11 @@ indica a coluna, ex.: `# BQ`) e rode a validação.
 O app roda na sua máquina. Para outras pessoas da rede acessarem:
 `.\.venv\Scripts\python -m streamlit run app.py --server.address 0.0.0.0` e compartilhe `http://<seu-ip>:8501`.
 Os dados continuam apenas na sua máquina.
+
+## 7. Versão web (página publicada)
+
+`python gerar_web.py dados\<planilha>.xlsx dados\usuarios.xlsx` gera `web/saida/necorc.html`, a página
+publicada para os usuários (login com os usuários de `usuarios.xlsx`, dados cifrados com a senha).
+O Python calcula o que não depende dos parâmetros; `web/motor.js` recalcula o resto na página com as
+mesmas fórmulas de `necorc/modelo.py`. O botão "Gerar arquivo Excel com os resultados" gera as mesmas
+4 abas da versão local (`web/vendor/` tem a biblioteca SheetJS usada para montar o .xlsx).

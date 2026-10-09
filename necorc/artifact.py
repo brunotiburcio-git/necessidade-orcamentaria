@@ -15,6 +15,18 @@ from .excel import criterio_ok, eh_numero, igual
 from .leitura import SECRETARIAS, Entrada, Parametros
 from .modelo import COM_EXEC, DESEMB_100, EMPENH_100, EXEC_100, SEM_EXEC, calcular
 
+# Colunas da aba "detalhe contratos" que dependem dos parâmetros: a página recalcula (motor.js).
+# As demais vão prontas em "detalhe.fixas", na ordem da view.
+COLUNAS_RECALCULADAS = [
+    "Ritmo de execução parâmetros", "Coluna1", "% exec mensal parâmetros",
+    "necessidade orçamentária preliminar", "ritmo parametros SEMOB", "ritmo parametros SNSA",
+    "ritmo parametros SNP", "ritmo parametros SNH", "ritmo parametros SNs",
+    "% exec mensal parâmetros SNs", "necessidade preliminar regra secretaria",
+    "critério inicial aplicado", "necessidade orçamento inicial", "necessidade orçamento pós NecFin",
+    "Simplificado inicial", "simplificado final", "necessidade orçamento final",
+    "bln_execução (situação obra)",
+]
+
 CLASSES = [EXEC_100, DESEMB_100, EMPENH_100, SEM_EXEC, COM_EXEC]   # índice 5 = outros
 BLN_SIMPLIFICADO = ["Não", "Sim_porém sem execução", "Sim"]        # índice 3 = verificar
 
@@ -75,6 +87,17 @@ def exportar(entrada: Entrada) -> dict:
               "linhas": [i for i, a in enumerate(acao) if criterio_ok(a, cod)]}
              for _, desc, cod in entrada.acoes_resumo]
 
+    colunas = list(linhas[0].keys()) if linhas else []
+    fixas, datas = {}, []
+    for nome in colunas:
+        if nome in COLUNAS_RECALCULADAS:
+            continue
+        vals = [r[nome] for r in linhas]
+        if any(isinstance(v, datetime) for v in vals):
+            datas.append(nome)
+            vals = [v.isoformat() if isinstance(v, datetime) else v for v in vals]
+        fixas[nome] = vals
+
     return {
         "arquivo": entrada.arquivo.name,
         "gerado_em": datetime.fromtimestamp(entrada.arquivo.stat().st_mtime).strftime("%d/%m/%Y %H:%M"),
@@ -85,4 +108,5 @@ def exportar(entrada: Entrada) -> dict:
         "acoes": acoes,
         "parametros": parametros_json(entrada.parametros),
         "col": col,
+        "detalhe": {"colunas": colunas, "fixas": fixas, "datas": datas},
     }
