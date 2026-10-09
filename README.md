@@ -41,6 +41,13 @@ No VS Code: *File > Open Folder* na pasta do projeto e, se quiser, selecione o i
 5. "Gerar arquivo Excel com os resultados" baixa os resumos, os parâmetros usados e o detalhe por
    contrato.
 
+### Acesso pela rede (chefias e técnicos)
+
+Dê dois cliques em `iniciar_sistema.bat`. A janela mostra o endereço para as outras pessoas
+(`http://NOME-DO-COMPUTADOR:8501`, ou o "Network URL" com o IP). Quem estiver na mesma rede abre esse
+endereço no navegador e entra com o login. O sistema fica no ar enquanto a janela estiver aberta.
+Cada pessoa tem a sua própria sessão: os parâmetros que uma muda não afetam as outras.
+
 ### Usuários e senhas
 
 O acesso é controlado pela planilha `dados/usuarios.xlsx` (não vai para o GitHub), com as colunas
