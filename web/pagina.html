@@ -39,22 +39,22 @@ body { min-height: 100vh;
     linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: auto, 40px 40px, 40px 40px;
 }
-.pagina { max-width: 1760px; margin: 0 auto; padding-inline: clamp(16px, 2.5vw, 40px); padding-block: 1.2rem 3rem;
-          display: grid; gap: 1.6rem; }
+.pagina { max-width: 1760px; margin: 0 auto; padding-inline: clamp(16px, 2.5vw, 40px); padding-block: .6rem 2rem;
+          display: grid; gap: .9rem; }
 
 /* cabeçalho */
-.topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .8rem 1.5rem; }
-h1 { margin: 0; font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 800; letter-spacing: -.01em; text-wrap: balance;
+.topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem 1.5rem; }
+h1 { margin: 0; font-size: clamp(1.35rem, 2vw, 1.7rem); font-weight: 800; letter-spacing: -.01em; text-wrap: balance;
      background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.base { color: var(--muted); font-size: .85rem; margin-top: .2rem; }
+.base { color: var(--muted); font-size: .85rem; margin-top: .05rem; }
 .base b { color: var(--text); font-weight: 600; }
 .tema { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
 .tema button { font: inherit; font-size: .85rem; padding: .4rem .8rem; border: 0; background: var(--surface); color: var(--muted); cursor: pointer; }
 .tema button[aria-pressed="true"] { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #0b0f19; font-weight: 600; }
 
-h2 { margin: 0; font-size: 1.35rem; color: var(--title); display: flex; align-items: center; gap: .6rem; }
+h2 { margin: 0; font-size: 1.2rem; color: var(--title); display: flex; align-items: center; gap: .6rem; }
 h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; background: linear-gradient(var(--accent), var(--accent-2)); }
-.secao { display: grid; gap: .8rem; min-width: 0; }
+.secao { display: grid; gap: .45rem; min-width: 0; }
 .legenda { font-family: var(--mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
 
 /* parâmetros: 5 blocos */
@@ -65,16 +65,17 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 .legendas { display: grid; grid-template-columns: 1.2fr 4fr; gap: .9rem; }
 @media (max-width: 1500px) { .legendas { display: none; } }
 .bloco { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent-2);
-         border-radius: var(--radius); padding: .9rem 1rem 1rem; display: grid; gap: .55rem; min-width: 0; }
+         border-radius: var(--radius); padding: .55rem .8rem .65rem; display: grid; gap: .35rem; min-width: 0; align-content: start; }
 .bloco.geral { border-top-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft), 0 8px 24px var(--accent-soft); }
-.bloco h3 { margin: 0; font-size: 1.15rem; letter-spacing: .04em; color: var(--title); }
-.bloco .nota { margin: -.3rem 0 .2rem; color: var(--muted); font-size: .8rem; }
-.campo { display: flex; align-items: center; gap: .5rem; }
+.bloco h3 { margin: 0; font-size: 1.1rem; letter-spacing: .04em; color: var(--title); }
+.bloco .cabeca { display: flex; align-items: center; justify-content: space-between; gap: .5rem; height: 1.9rem; }
+.bloco > .chave { height: 1.6rem; white-space: nowrap; }
+.campo { display: flex; align-items: center; gap: .5rem; height: 2rem; }
 .campo label { flex: 1 1 auto; min-width: 0; font-size: .88rem; color: var(--muted); line-height: 1.15; }
 .campo.principal label { color: var(--title); font-weight: 700; }
 .geral .campo.principal label { color: var(--accent); }
 .campo input { flex: 0 0 5.2rem; width: 5.2rem; font: inherit; font-size: .95rem; text-align: right; font-variant-numeric: tabular-nums;
-               padding: .35rem .55rem; border-radius: 7px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+               padding: .2rem .55rem; border-radius: 7px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
 .geral .campo.principal input { border: 2px solid var(--accent); font-weight: 700; box-shadow: 0 0 10px var(--glow); }
 .campo input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .campo input:disabled { opacity: .45; }
@@ -98,7 +99,7 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 .chave input:checked { background: var(--accent); }
 .chave input:checked::after { transform: translateX(1rem); }
 .chave input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.acoes-geral { display: flex; justify-content: flex-end; }
+.cabeca .btn { font-size: .72rem; padding: .2rem .55rem; }
 .btn { font: inherit; font-size: .8rem; padding: .35rem .8rem; border-radius: 7px; border: 1px solid var(--line-strong);
        background: var(--surface); color: var(--text); cursor: pointer; }
 .exportar { margin-top: .9rem; }
@@ -108,7 +109,7 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 /* tabelas */
 .tabela-box { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-width: 1500px; }
 table { border-collapse: collapse; width: 100%; font-size: .92rem; font-variant-numeric: tabular-nums; }
-th, td { padding: .5rem .8rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th, td { padding: .3rem .8rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { text-align: left; font-weight: 600; color: var(--muted); font-size: .82rem; background: var(--surface-2); }
 td.num, th.num { text-align: right; }
 tbody tr:last-child td { border-bottom: 0; }
@@ -247,8 +248,11 @@ function iniciarApp(D, nomeUsuario) {
     ["geral"].concat(SECS).forEach(function (nome) {
       var geral = nome === "geral", el = document.createElement("div");
       el.className = "bloco" + (geral ? " geral" : "");
-      var h = '<h3>' + (geral ? "GERAL" : nome) + '</h3>';
-      if (geral) h += '<p class="nota">Vale para todos, exceto secretarias com regra específica ligada.</p>';
+      // cabeçalho e 1ª linha com a mesma altura em todos os blocos, para os campos ficarem alinhados
+      var h = '<div class="cabeca"><h3' + (geral ? ' title="Vale para todos, exceto secretarias com regra específica ligada."' : "") + '>' +
+              (geral ? "GERAL" : nome) + '</h3>' +
+              (geral ? '<button type="button" class="btn" id="restaurar" title="Restaurar parâmetros da planilha">Restaurar planilha</button>' : "") + '</div>';
+      if (geral) h += '<label class="chave"><input type="checkbox" id="bln-execucao"' + (estado.blnExec ? " checked" : "") + ' title="Considera só os contratos com obra em execução (bln_execucao)"> Somente contratos em execução</label>';
       else h += '<label class="chave"><input type="checkbox" id="bln-' + nome + '"' + (estado.bln[nome] ? " checked" : "") + '> Regra específica</label>';
       CAMPOS.forEach(function (c) {
         var id = "p-" + nome + "-" + c.id, v = estado.regras[nome][c.id];
@@ -257,10 +261,6 @@ function iniciarApp(D, nomeUsuario) {
         h += '<input id="' + id + '" inputmode="decimal" autocomplete="off" value="' + fmtCampo(c, c.pct ? Motor.paraPct(v) : v) + '"' +
              (!geral && !estado.bln[nome] ? " disabled" : "") + ' data-regra="' + nome + '" data-campo="' + c.id + '"></div>';
       });
-      if (geral) {
-        h += '<label class="chave"><input type="checkbox" id="bln-execucao"' + (estado.blnExec ? " checked" : "") + '> Somente contratos em execução</label>';
-        h += '<div class="acoes-geral"><button type="button" class="btn" id="restaurar">Restaurar parâmetros da planilha</button></div>';
-      }
       el.innerHTML = h;
       blocos.appendChild(el);
     });
