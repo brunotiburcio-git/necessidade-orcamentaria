@@ -149,6 +149,7 @@ td.num, th.num { text-align: right; }
 tbody tr:last-child td { border-bottom: 0; }
 tr.total td { background: var(--total-bg); font-weight: 700; color: var(--title); }
 td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); font-weight: 600; }
+.resumo-modo { display: grid; gap: .45rem; }
 .cabeca-tabela { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; max-width: 1500px; }
 
 .metricas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .9rem; max-width: 1500px; }
@@ -215,13 +216,17 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
 
   <section class="secao" aria-labelledby="t-resumo">
     <h2 id="t-resumo">Resumo</h2>
-    <div class="cabeca-tabela"><div class="legenda">Por secretaria (valores em milhões)</div>
-      <button type="button" class="btn" id="copiar-sec">Copiar tabela</button></div>
-    <div class="tabela-box"><table id="tab-sec"></table></div>
-    <div class="cabeca-tabela" style="margin-top:.6rem"><div class="legenda">Por ação orçamentária (valores em milhões)</div>
-      <button type="button" class="btn" id="copiar-acao">Copiar tabela</button></div>
-    <div class="tabela-box"><table id="tab-acao"></table></div>
-    <div class="metricas" id="metricas"></div>
+    <div class="resumo-modo" id="resumo-sec">
+      <div class="cabeca-tabela"><div class="legenda">Por secretaria (valores em milhões)</div>
+        <button type="button" class="btn" id="copiar-sec">Copiar tabela</button></div>
+      <div class="tabela-box"><table id="tab-sec"></table></div>
+    </div>
+    <div class="resumo-modo" id="resumo-acao">
+      <div class="cabeca-tabela"><div class="legenda">Por ação orçamentária (valores em milhões)</div>
+        <button type="button" class="btn" id="copiar-acao">Copiar tabela</button></div>
+      <div class="tabela-box"><table id="tab-acao"></table></div>
+      <div class="metricas" id="metricas"></div>
+    </div>
     <div class="exportar"><button type="button" class="btn" id="exportar">Gerar arquivo Excel com os resultados</button></div>
     <p class="rodape">Os cálculos reproduzem as fórmulas da planilha do modelo preditivo. "Copiar tabela" copia os valores para colar no Excel. O arquivo Excel traz os resumos, os parâmetros usados e o detalhe de todos os contratos.</p>
   </section>
@@ -344,7 +349,9 @@ function iniciarApp(D, nomeUsuario) {
   }
 
   // ---------- menu de módulos ----------
-  function marcarModo() {
+  function marcarModo() {  // cada módulo mostra o seu resumo; o arquivo Excel continua com os dois
+    document.getElementById("resumo-sec").hidden = modo !== "secretaria";
+    document.getElementById("resumo-acao").hidden = modo !== "acao";
     document.querySelectorAll(".menu button[data-modo]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.modo === modo)); });
   }
   document.querySelectorAll(".menu button[data-modo]").forEach(function (b) {
