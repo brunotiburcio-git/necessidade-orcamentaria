@@ -8,3 +8,4 @@ dados/*.xlsx
 dados/*.xlsm
 ~$*.xlsx
 dados/.chave_sessao
+web/saida/
