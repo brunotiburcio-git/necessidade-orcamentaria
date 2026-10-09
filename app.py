@@ -45,7 +45,7 @@ CAMPOS = [  # (atributo, rótulo na tela, explicação mostrada no "?" da regra 
      "- Usuário escolheu 1% no campo Sem exec/piso\n"
      "- Usuário escolheu 3 meses no campo Meses\n\n"
      "Então o modelo irá prever um valor mínimo de 3% do valor de repasse para cada contrato.\n\n"
-     "**Resultado:** valor repasse x sem exec/piso x meses"),
+     "**Resultado:** valor repasse x semexec_piso x meses"),
     ("teto", "Teto máximo (%)",
      "Percentual máximo de execução prevista.\n\n"
      "Ou seja, a execução prevista não pode ser superior a 100% ao mês."),
