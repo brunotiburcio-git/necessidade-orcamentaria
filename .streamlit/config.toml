@@ -1,6 +1,6 @@
 # Modo claro / escuro: menu ⋮ (canto superior direito) > Light, Dark ou System.
 [theme]
-baseFontSize = 18
+baseFontSize = 20
 headingFontSizes = ["36px", "36px", "28px", "22px", "18px", "16px"]
 font = "sans serif"
 
