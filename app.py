@@ -166,38 +166,40 @@ st.title("Necessidade orçamentária: modelo preditivo")
 
 st.subheader("Parâmetros")
 
-# Layout: regra geral à esquerda; as 4 secretarias em grade 2x2 à direita (tudo visível sem rolar)
-esq, dir_ = st.columns([1.1, 1.7], gap="medium")
+# Layout: 5 colunas lado a lado (regra geral + SEMOB, SNSA, SNP, SNH). Em cada bloco, um campo por linha
+# (rótulo à esquerda, valor à direita), com os 3 principais primeiro: margem, sem exec/piso, meses.
+ORDEM = list(PRINCIPAIS) + ["simplif", "teto"]
+AJUDA = {c: a for c, _, a in CAMPOS}
 
-with esq:
-    st.markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
-    with st.container(border=True, key="card_geral"):
-        st.caption("Vale para todos os contratos, exceto secretarias com regra específica.")
-        for par in (CAMPOS[0:2], CAMPOS[2:4], CAMPOS[4:5]):
-            cols = st.columns(2)
-            for col, (campo, _, ajuda) in zip(cols, par):
-                with col:
-                    campo_numero("geral", campo, ROTULO_CURTO[campo], ajuda)
-        st.toggle("Somente contratos em execução", key="p_bln_execucao",
-                  help="bln_execucao: afeta a linha 'Nec orçamentária final (bln_execucao)'.")
-        st.button("Restaurar parâmetros da planilha", key="restaurar", help="Volta aos valores da planilha (regras específicas desligadas)",
-                  on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
 
-with dir_:
-    st.markdown('<div class="legenda">Regras específicas por secretaria</div>', unsafe_allow_html=True)
-    for linha_secs in (SECRETARIAS[0:2], SECRETARIAS[2:4]):
-        for col, sec in zip(st.columns(2), linha_secs):
-            with col, st.container(border=True, key=f"card_{sec}"):
-                topo = st.columns([1, 1.5], vertical_alignment="center")
-                topo[0].markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
-                # sem ícone de ajuda para o rótulo caber inteiro (ligado = regra da secretaria; desligado = regra geral)
-                ligada = topo[1].toggle("Específica", key=chave(sec, "bln"))
-                # 1ª linha: os 3 principais (mesma ordem da regra geral); 2ª linha: os outros dois
-                campos = {c: (c, ROTULO_CURTO[c], a) for c, _, a in CAMPOS}
-                for grupo in ([campos[c] for c in PRINCIPAIS], [campos["simplif"], campos["teto"]]):
-                    for c3, (campo, rotulo, ajuda) in zip(st.columns([1, 1.45, 0.75], gap="small"), grupo):
-                        with c3:
-                            campo_numero(sec, campo, rotulo, None, desabilitado=not ligada)
+def linha_campo(nome_regra: str, campo: str, desabilitado: bool = False):
+    # rótulo e valor na mesma linha: feito no style.css (classe .st-key-<chave> do campo)
+    campo_numero(nome_regra, campo, ROTULO_CURTO[campo], AJUDA[campo] if nome_regra == "geral" else None,
+                 desabilitado=desabilitado)
+
+
+leg = st.columns([1.2, 4], gap="small")
+leg[0].markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
+leg[1].markdown('<div class="legenda">Regras específicas por secretaria</div>', unsafe_allow_html=True)
+blocos = st.columns([1.2, 1, 1, 1, 1], gap="small")
+
+with blocos[0], st.container(border=True, key="card_geral"):
+    st.markdown('<div class="sec-titulo">GERAL</div>', unsafe_allow_html=True)
+    st.caption("Vale para todos, exceto secretarias com regra específica ligada.")
+    for campo in ORDEM:
+        linha_campo("geral", campo)
+    st.toggle("Somente contratos em execução", key="p_bln_execucao",
+              help="bln_execucao: afeta a linha 'Nec orçamentária final (bln_execucao)'.")
+    st.button("Restaurar parâmetros da planilha", key="restaurar", help="Volta aos valores da planilha (regras específicas desligadas)",
+              on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
+
+for col, sec in zip(blocos[1:], SECRETARIAS):
+    with col, st.container(border=True, key=f"card_{sec}"):
+        st.markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
+        # ligado = regra da secretaria; desligado = regra geral
+        ligada = st.toggle("Regra específica", key=chave(sec, "bln"))
+        for campo in ORDEM:
+            linha_campo(sec, campo, desabilitado=not ligada)
 
 parametros = parametros_do_estado()
 linhas = calcular(entrada, parametros)

@@ -237,7 +237,7 @@ h1 { padding-top: 0 !important; padding-bottom: 0.3rem !important; }
 [class*="st-key-card"] [data-testid="stVerticalBlock"] { gap: 0.4rem; }
 [class*="st-key-card"] .stNumberInput input { padding-top: 0.3rem; padding-bottom: 0.3rem; }
 .legenda { margin-bottom: 0.25rem; }
-.sec-titulo { line-height: 1.2; margin: 0; }
+.sec-titulo { line-height: 1.2; margin: 0 0 0.35rem 0; }
 /* menos margem lateral: mais espaço para os campos em telas de notebook */
 [data-testid="stMainBlockContainer"], .block-container { padding-left: 2rem !important; padding-right: 2rem !important; max-width: 1700px; }
 [class*="st-key-card_S"] [data-testid="stWidgetLabel"] p { font-size: 0.8rem !important; white-space: nowrap; }
@@ -275,8 +275,28 @@ html[data-tema="claro"] .tema-botoes button[data-escolha="Light"] {
 /* barra lateral mais estreita: sobra espaço para os cards com a fonte maior */
 [data-testid="stSidebar"][aria-expanded="true"] { width: 300px !important; min-width: 300px !important; }
 
-/* telas menores (ex.: notebook 1366 px): rótulos dos cards das secretarias um pouco menores para caber na linha */
-@media (max-width: 1600px) {
-    [class*="st-key-card_S"] [data-testid="stWidgetLabel"] p { font-size: 0.7rem !important; }
-    [class*="st-key-card_S"] [data-testid="stHorizontalBlock"] { gap: 0.4rem !important; }
+
+/* ---------- Blocos em 5 colunas: rótulo à esquerda, valor à direita ---------- */
+[class*="st-key-card"] .stNumberInput { display: flex; align-items: center; gap: 0.5rem; }
+[class*="st-key-card"] .stNumberInput > label { flex: 0 0 52%; margin: 0; min-height: 0; }
+[class*="st-key-card"] .stNumberInput > div { flex: 1 1 auto; min-width: 0; }
+[class*="st-key-card"] [data-testid="stWidgetLabel"] p { font-size: 0.85rem !important; white-space: normal !important; line-height: 1.15; }
+[class*="st-key-card"] .stNumberInput input { text-align: right; }
+/* principais (margem, sem exec/piso, meses) em negrito também nas secretarias */
+.st-key-p_SEMOB_margem_exec [data-testid="stWidgetLabel"] p,
+.st-key-p_SEMOB_piso [data-testid="stWidgetLabel"] p,
+.st-key-p_SEMOB_meses [data-testid="stWidgetLabel"] p,
+.st-key-p_SNSA_margem_exec [data-testid="stWidgetLabel"] p,
+.st-key-p_SNSA_piso [data-testid="stWidgetLabel"] p,
+.st-key-p_SNSA_meses [data-testid="stWidgetLabel"] p,
+.st-key-p_SNP_margem_exec [data-testid="stWidgetLabel"] p,
+.st-key-p_SNP_piso [data-testid="stWidgetLabel"] p,
+.st-key-p_SNP_meses [data-testid="stWidgetLabel"] p,
+.st-key-p_SNH_margem_exec [data-testid="stWidgetLabel"] p,
+.st-key-p_SNH_piso [data-testid="stWidgetLabel"] p,
+.st-key-p_SNH_meses [data-testid="stWidgetLabel"] p { color: var(--title) !important; font-weight: 700; }
+
+/* telas menores (ex.: notebook 1366 px): o rótulo volta para cima do valor */
+@media (max-width: 1500px) {
+    [class*="st-key-card"] .stNumberInput { display: block; }
 }
