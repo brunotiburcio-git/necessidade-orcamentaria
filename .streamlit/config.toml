@@ -1,10 +1,24 @@
+# Modo claro / escuro: menu ⋮ (canto superior direito) > Light, Dark ou System.
 [theme]
-base = "dark"
+baseFontSize = 17
+headingFontSizes = ["44px", "36px", "28px", "22px", "18px", "16px"]
+font = "sans serif"
+
+[theme.dark]
 primaryColor = "#22d3ee"
 backgroundColor = "#0b0f19"
 secondaryBackgroundColor = "#111827"
 textColor = "#e5e9f0"
-font = "sans serif"
+dataframeHeaderTextColor = "#b7c4d8"
+borderColor = "#1f2a3d"
+
+[theme.light]
+primaryColor = "#0891b2"
+backgroundColor = "#f4f7fb"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#0f172a"
+dataframeHeaderTextColor = "#475569"
+borderColor = "#d9e1ec"
 
 [browser]
 gatherUsageStats = false

@@ -22,8 +22,8 @@ PASTA = (RAIZ / CONFIG.get("pasta_planilhas", "dados")).resolve()
 PADRAO = CONFIG.get("padrao_arquivo", "*.xlsx")
 
 CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâmetros)
-    ("margem_exec", "Margem s/ desempenho (%)", "Margem sobre desempenho atual (com execução), linha 4"),
-    ("simplif", "Regime simplificado (%)", "Regime simplificado (com execução), linha 5"),
+    ("margem_exec", "Margem (%)", "Margem sobre desempenho atual (com execução), linha 4"),
+    ("simplif", "Simplificado (%)", "Regime simplificado (com execução), linha 5"),
     ("piso", "Piso mínimo (%)", "Piso mínimo (sem execução), linha 6"),
     ("teto", "Teto máximo (%)", "Teto máximo (com alta execução), linha 7"),
     ("meses", "Qtd de meses", "Quantidade de meses, linha 8"),
@@ -35,6 +35,20 @@ ROTULO_CURTO = {"margem_exec": "Margem (%)", "simplif": "Simplificado (%)", "pis
 
 st.set_page_config(page_title="Necessidade orçamentária", layout="wide")
 st.markdown(f"<style>{(RAIZ / 'assets' / 'style.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+# Liga o modo claro do style.css quando o tema escolhido no menu ⋮ (Light / Dark / System) é claro.
+# Lê a cor do texto do app (escura = tema claro) e repete a checagem para acompanhar a troca de tema.
+st.html("""<script>
+if (!window.__temaNecorc) {
+  window.__temaNecorc = setInterval(function () {
+    var app = document.querySelector('.stApp'); if (!app) return;
+    var m = getComputedStyle(app).color.match(/\\d+/g); if (!m) return;
+    var lum = (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255;
+    var tema = lum < 0.5 ? 'claro' : 'escuro';
+    if (document.documentElement.dataset.tema !== tema) document.documentElement.dataset.tema = tema;
+  }, 300);
+}
+</script>""", unsafe_allow_javascript=True)
+COR_NAO = "#ef4444"  # vermelho legível nos dois modos
 
 
 @st.cache_data(show_spinner="Lendo a planilha...")
@@ -120,6 +134,7 @@ if st.sidebar.button("Recarregar planilha"):
     carregar.clear()
 entrada = carregar(str(escolhido), escolhido.stat().st_mtime)
 st.sidebar.caption(f"{len(entrada.linhas):,} contratos lidos da aba da view".replace(",", "."))
+st.sidebar.caption("Modo claro ou escuro: menu ⋮ (canto superior direito) > Light ou Dark. \"System\" segue o Windows.")
 
 if st.session_state.get("_arquivo") != (str(escolhido), escolhido.stat().st_mtime):
     carregar_parametros_no_estado(entrada.parametros)
@@ -148,11 +163,11 @@ with st.container(border=True, key="card_geral"):
 
 st.markdown('<div class="legenda" style="margin-top:1rem">Regras específicas por secretaria</div>',
             unsafe_allow_html=True)
-cols = st.columns([1, 1, 1, 1, 1.2])  # última coluna fica vazia: cards mais estreitos
+cols = st.columns([1, 1, 1, 1, 0.7])  # última coluna fica vazia: cards mais estreitos
 for col, sec in zip(cols, SECRETARIAS):
     with col, st.container(border=True, key=f"card_{sec}"):
         st.markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
-        ligada = st.toggle("Regra específica", key=chave(sec, "bln"),
+        ligada = st.toggle("Específica", key=chave(sec, "bln"),
                            help=f"bln_{sec.lower()}: ligado = regra da secretaria; desligado = regra geral")
         for campo, _, ajuda in CAMPOS:
             campo_numero(sec, campo, ROTULO_CURTO[campo], ajuda, desabilitado=not ligada)
@@ -163,19 +178,20 @@ linhas = calcular(entrada, parametros)
 # ---------------------------------------------------------------------------
 # Resultados
 # ---------------------------------------------------------------------------
-LARGURA_TABELAS = [4, 1.2]  # mesma proporção dos cards das secretarias (2ª coluna fica vazia)
+LARGURA_TABELAS = [4, 0.7]  # mesma proporção dos cards das secretarias (2ª coluna fica vazia)
 
 st.subheader("Resumo por secretaria (valores em milhões)")
 df_sec = tabela_secretarias(entrada, linhas, parametros)
-st.columns(LARGURA_TABELAS)[0].dataframe(df_sec.style.format(fmt_br), width="stretch")
+df_sec = df_sec.rename_axis("Item").reset_index()  # rótulos como coluna comum (mesma cor do restante)
+st.columns(LARGURA_TABELAS)[0].dataframe(df_sec.style.format(fmt_br), width="stretch", hide_index=True)
 
 st.subheader("Resumo por ação orçamentária (valores em milhões)")
 df_acao, totais = tabela_acoes(entrada, linhas)
 area = st.columns(LARGURA_TABELAS)[0]
 area.dataframe(
     df_acao.style.format({c: fmt_br for c in ["nec orc final", "disponível LOA", "Saldo"]})
-    .map(lambda v: "color: #f87171; font-weight: 600" if v == "Não" else "", subset=["Dentro disp"]),
-    width="stretch", hide_index=True, height=35 * (len(df_acao) + 1) + 3)
+    .map(lambda v: f"color: {COR_NAO}; font-weight: 600" if v == "Não" else "", subset=["Dentro disp"]),
+    width="stretch", hide_index=True, height="content")
 c1, c2, c3, c4 = area.columns(4)
 c1.metric("Nec. orc. final", fmt_br(totais["TOTAL nec orc final"]))
 c2.metric("Disponível LOA", fmt_br(totais["TOTAL disponível LOA"]))

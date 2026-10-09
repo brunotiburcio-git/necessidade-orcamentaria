@@ -1,4 +1,4 @@
-/* Tema escuro "tech" (baseado no style.css do usuário): fundo azul-petróleo, acentos ciano e verde */
+/* Tema "tech" (variáveis do modo escuro; o modo claro sobrescreve em tema_claro.css) (baseado no style.css do usuário): fundo azul-petróleo, acentos ciano e verde */
 :root {
     --bg: #0b0f19;
     --bg-elevated: #111827;
@@ -14,6 +14,9 @@
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    --title: #ffffff;
+    --header-bg: rgba(11, 15, 25, 0.85);
+    --grid-line: rgba(255, 255, 255, 0.025);
 }
 
 /* fundo com brilhos e grade sutil */
@@ -22,14 +25,14 @@
     background-image:
         radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.10), transparent 40%),
         radial-gradient(circle at 80% 100%, rgba(74, 222, 128, 0.08), transparent 40%),
-        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: auto, auto, 40px 40px, 40px 40px;
     background-attachment: fixed;
     font-family: var(--font);
 }
 [data-testid="stHeader"] {
-    background: rgba(11, 15, 25, 0.85);
+    background: var(--header-bg);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
 }
@@ -50,7 +53,7 @@ h1 {
 
 /* subtítulos com barra de acento à esquerda */
 h2, h3 {
-    color: #fff !important;
+    color: var(--title) !important;
     position: relative;
     padding-left: 0.85rem !important;
 }
@@ -143,7 +146,7 @@ h2::before, h3::before {
     text-transform: uppercase;
     color: var(--text-muted) !important;
 }
-[data-testid="stMetricValue"] { color: #fff; }
+[data-testid="stMetricValue"] { color: var(--title); }
 
 /* ---------- Ajustes de leitura e cards de parâmetros ---------- */
 /* rótulos dos campos mais claros */
@@ -152,7 +155,7 @@ h2::before, h3::before {
 .stCheckbox label p, [data-testid="stToggle"] label p {
     color: var(--text) !important;
     font-weight: 500;
-    font-size: 0.9rem !important;
+    font-size: 0.95rem !important;
 }
 [data-testid="stCaptionContainer"] p { color: var(--text-muted) !important; }
 
@@ -170,7 +173,7 @@ h2::before, h3::before {
 .sec-titulo {
     font-size: 1.15rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--title);
     letter-spacing: 0.04em;
 }
 /* campos desligados ficam apagados */
@@ -183,9 +186,39 @@ h2::before, h3::before {
 }
 .st-key-card_SEMOB [data-testid="stWidgetLabel"] p, .st-key-card_SNSA [data-testid="stWidgetLabel"] p,
 .st-key-card_SNP [data-testid="stWidgetLabel"] p, .st-key-card_SNH [data-testid="stWidgetLabel"] p {
-    font-size: 0.82rem !important;
+    font-size: 0.88rem !important;
 }
 
 /* indicadores compactos (cabem nas colunas estreitas) */
-[data-testid="stMetricValue"] { font-size: 1.6rem !important; }
+[data-testid="stMetricValue"] { font-size: 1.7rem !important; }
 [data-testid="stMetric"] { padding: 0.7rem 0.9rem; }
+
+/* ---------- Modo claro (o atributo data-tema é ligado pelo app conforme o tema do menu ⋮) ---------- */
+html[data-tema="claro"] {
+    --bg: #f4f7fb;
+    --bg-elevated: #ffffff;
+    --bg-input: #eef2f7;
+    --border: #d9e1ec;
+    --border-strong: #c3cedd;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --accent: #0891b2;
+    --accent-2: #16a34a;
+    --accent-glow: rgba(8, 145, 178, 0.25);
+    --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    --title: #0b1220;
+    --header-bg: rgba(244, 247, 251, 0.85);
+    --grid-line: rgba(15, 23, 42, 0.04);
+}
+html[data-tema="claro"] [data-testid="stAppViewContainer"] {
+    background-image:
+        radial-gradient(circle at 20% 0%, rgba(8, 145, 178, 0.08), transparent 40%),
+        radial-gradient(circle at 80% 100%, rgba(22, 163, 74, 0.06), transparent 40%),
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+}
+/* botões: gradiente claro com texto escuro */
+html[data-tema="claro"] .stButton > button,
+html[data-tema="claro"] .stDownloadButton > button {
+    background: linear-gradient(90deg, #22d3ee, #4ade80) !important;
+}
