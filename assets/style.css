@@ -185,3 +185,7 @@ h2::before, h3::before {
 .st-key-card_SNP [data-testid="stWidgetLabel"] p, .st-key-card_SNH [data-testid="stWidgetLabel"] p {
     font-size: 0.82rem !important;
 }
+
+/* indicadores compactos (cabem nas colunas estreitas) */
+[data-testid="stMetricValue"] { font-size: 1.6rem !important; }
+[data-testid="stMetric"] { padding: 0.7rem 0.9rem; }

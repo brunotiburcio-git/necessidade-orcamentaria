@@ -163,19 +163,22 @@ linhas = calcular(entrada, parametros)
 # ---------------------------------------------------------------------------
 # Resultados
 # ---------------------------------------------------------------------------
+LARGURA_TABELAS = [4, 1.2]  # mesma proporção dos cards das secretarias (2ª coluna fica vazia)
+
 st.subheader("Resumo por secretaria (valores em milhões)")
 df_sec = tabela_secretarias(entrada, linhas, parametros)
-st.dataframe(df_sec.style.format(fmt_br), width="stretch")
+st.columns(LARGURA_TABELAS)[0].dataframe(df_sec.style.format(fmt_br), width="stretch")
 
 st.subheader("Resumo por ação orçamentária (valores em milhões)")
 df_acao, totais = tabela_acoes(entrada, linhas)
-st.dataframe(
+area = st.columns(LARGURA_TABELAS)[0]
+area.dataframe(
     df_acao.style.format({c: fmt_br for c in ["nec orc final", "disponível LOA", "Saldo"]})
     .map(lambda v: "color: #f87171; font-weight: 600" if v == "Não" else "", subset=["Dentro disp"]),
     width="stretch", hide_index=True, height=35 * (len(df_acao) + 1) + 3)
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("TOTAL nec orc final", fmt_br(totais["TOTAL nec orc final"]))
-c2.metric("TOTAL disponível LOA", fmt_br(totais["TOTAL disponível LOA"]))
+c1, c2, c3, c4 = area.columns(4)
+c1.metric("Nec. orc. final", fmt_br(totais["TOTAL nec orc final"]))
+c2.metric("Disponível LOA", fmt_br(totais["TOTAL disponível LOA"]))
 c3.metric("Faltando", fmt_br(totais["Faltando"]))
 c4.metric("Sobrando", fmt_br(totais["Sobrando"]))
 
