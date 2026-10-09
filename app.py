@@ -136,7 +136,22 @@ if st.sidebar.button("Recarregar planilha"):
     carregar.clear()
 entrada = carregar(str(escolhido), escolhido.stat().st_mtime)
 st.sidebar.caption(f"{len(entrada.linhas):,} contratos lidos da aba da view".replace(",", "."))
-st.sidebar.caption("Modo claro ou escuro: menu ⋮ (canto superior direito) > Light ou Dark. \"System\" segue o Windows.")
+# Botões de tema: gravam a escolha onde o Streamlit guarda o tema (a mesma do menu ⋮) e recarregam a página.
+st.sidebar.html("""
+<div class="tema-botoes">
+  <button type="button" data-escolha="Light">☀ Claro</button>
+  <button type="button" data-escolha="Dark">☾ Escuro</button>
+</div>
+<script>
+document.querySelectorAll('.tema-botoes button').forEach(function (b) {
+  if (b.dataset.ligado) return; b.dataset.ligado = '1';
+  b.addEventListener('click', function () {
+    localStorage.setItem('stActiveTheme-' + window.location.pathname + '-v2', JSON.stringify(b.dataset.escolha));
+    window.location.reload();
+  });
+});
+</script>""", unsafe_allow_javascript=True)
+st.sidebar.caption("Ao trocar o tema a página recarrega e os parâmetros voltam aos da planilha.")
 
 if st.session_state.get("_arquivo") != (str(escolhido), escolhido.stat().st_mtime):
     carregar_parametros_no_estado(entrada.parametros)
@@ -171,10 +186,10 @@ with dir_:
     for linha_secs in (SECRETARIAS[0:2], SECRETARIAS[2:4]):
         for col, sec in zip(st.columns(2), linha_secs):
             with col, st.container(border=True, key=f"card_{sec}"):
-                topo = st.columns([1, 1.3], vertical_alignment="center")
+                topo = st.columns([1, 1.5], vertical_alignment="center")
                 topo[0].markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
-                ligada = topo[1].toggle("Específica", key=chave(sec, "bln"),
-                                        help=f"bln_{sec.lower()}: ligado = regra da secretaria; desligado = regra geral")
+                # sem ícone de ajuda para o rótulo caber inteiro (ligado = regra da secretaria; desligado = regra geral)
+                ligada = topo[1].toggle("Específica", key=chave(sec, "bln"))
                 campos = [(c, ROTULO_CURTO[c], a) for c, _, a in CAMPOS]
                 for grupo in (campos[0:3], campos[3:5]):
                     for c3, (campo, rotulo, ajuda) in zip(st.columns(3), grupo):
