@@ -9,3 +9,6 @@ dados/*.xlsm
 ~$*.xlsx
 dados/.chave_sessao
 web/saida/
+
+# arquivos compactados (cópias de backup)
+*.zip

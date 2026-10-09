@@ -124,6 +124,7 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 .blocos.modo-acao { grid-template-columns: minmax(17rem, 1.2fr) 4fr; }
 @media (max-width: 1500px) { .blocos.modo-acao { grid-template-columns: 19rem minmax(0, 1fr); } }
 @media (max-width: 820px) { .blocos.modo-acao { grid-template-columns: minmax(0, 1fr); } }
+#tab-acao tr.grupo td { font-weight: 700; color: var(--accent); background: var(--accent-soft); padding-top: .35rem; padding-bottom: .35rem; letter-spacing: .03em; }
 .acoes-param { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; align-items: start; min-width: 0; }
 @media (max-width: 1500px) { .acoes-param { grid-template-columns: minmax(0, 1fr); } }
 .acoes-param table { width: 100%; table-layout: fixed; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent-2);
@@ -243,18 +244,27 @@ try { var temaSalvo = localStorage.getItem("necorc-tema"); if (temaSalvo) docume
 function iniciarApp(D, nomeUsuario) {
   "use strict";
   var SECS = D.secretarias;
-  var CAMPOS = [  // ordem na tela: os 3 principais primeiro
+  var CAMPOS = [  // ordem na tela: os 3 principais primeiro; Simplif. por último (só na regra geral, como no Excel: coluna BS)
     { id: "margem_exec", rotulo: "Margem (%)", pct: true, principal: true,
       ajuda: "<p>Percentual de margem a ser aplicado sobre ritmo de execução do contrato.</p><p><b>Exemplo:</b></p><ul><li>Contrato executa 1% ao mês</li><li>Usuário escolheu 25% de margem</li><li>Usuário escolheu 3 meses no campo Meses</li></ul><p>Então o ritmo de execução prevista será de 1,25%.</p><p><b>Resultado:</b> execução real x (1 + margem) x meses</p>" },
     { id: "piso", rotulo: "Sem exec/piso (%)", pct: true, principal: true,
       ajuda: "<p>Para os contratos sem execução, será considerado um percentual mínimo do valor de repasse a ser garantido vezes a quantidade de meses.</p><p><b>Exemplo:</b></p><ul><li>Contrato executou 0% nos últimos 3, 6 ou 12 meses (sem execução)</li><li>Usuário escolheu 1% no campo Sem exec/piso</li><li>Usuário escolheu 3 meses no campo Meses</li></ul><p>Então o modelo irá prever um valor mínimo de 3% do valor de repasse para cada contrato.</p><p><b>Resultado:</b> valor repasse x semexec_piso x meses</p>" },
     { id: "meses", rotulo: "Meses", pct: false, principal: true,
       ajuda: "<p>Quantidade de meses para qual o usuário quer projetar a necessidade orçamentária.</p>" },
-    { id: "simplif", rotulo: "Simplif. (%)", pct: true, principal: false,
-      ajuda: "<p>Para os contratos do regime simplificado, a necessidade orçamentária prevê um valor padrão de necessidade orçamentária.</p><p>Ou seja, 50% significa que para os contratos em execução, deve-se garantir 50% do valor do repasse do contrato.</p>" },
     { id: "teto", rotulo: "Teto (%)", pct: true, principal: false,
-      ajuda: "<p>Percentual máximo de execução prevista.</p><p>Ou seja, a execução prevista não pode ser superior a 100% ao mês.</p>" }
+      ajuda: "<p>Percentual máximo de execução prevista.</p><p>Ou seja, a execução prevista não pode ser superior a 100% ao mês.</p>" },
+    { id: "simplif", rotulo: "Simplif. (%)", pct: true, principal: false,
+      ajuda: "<p>Para os contratos do regime simplificado, a necessidade orçamentária prevê um valor padrão de necessidade orçamentária.</p><p>Ou seja, 50% significa que para os contratos em execução, deve-se garantir 50% do valor do repasse do contrato.</p>" }
   ];
+
+  // resumo por ação agrupado por secretaria, na ordem em que cada secretaria aparece na planilha
+  var ORDEM_ACOES = (function () {
+    var grupos = [];
+    D.acoes.forEach(function (a) { if (grupos.indexOf(a.secretaria) < 0) grupos.push(a.secretaria); });
+    return D.acoes.map(function (a, i) { return i; })
+      .sort(function (x, y) { return grupos.indexOf(D.acoes[x].secretaria) - grupos.indexOf(D.acoes[y].secretaria) || x - y; });
+  })();
+  var CAMPOS_ESPEC = CAMPOS.filter(function (c) { return c.id !== "simplif"; });  // campos das regras específicas
 
   function fmt(v, casas) {
     return v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
@@ -304,12 +314,12 @@ function iniciarApp(D, nomeUsuario) {
   }
   function tabelaAcoes(itens) {  // regras específicas por ação: uma linha por ação
     var h = '<table><thead><tr><th>Ação (regra específica)</th>' +
-            CAMPOS.map(function (c) { return '<th title="' + c.rotulo + '">' + (c.id === "piso" ? "Piso %" : c.rotulo.replace(" (%)", " %")) + "</th>"; }).join("") + "</tr></thead><tbody>";
+            CAMPOS_ESPEC.map(function (c) { return '<th title="' + c.rotulo + '">' + (c.id === "piso" ? "Piso %" : c.rotulo.replace(" (%)", " %")) + "</th>"; }).join("") + "</tr></thead><tbody>";
     itens.forEach(function (a) {
       var cod = a.codigo, lig = estado.blnAcao[cod];
       h += '<tr><td><label class="chave" title="' + cod + " · " + a.descricao + '"><input type="checkbox" data-acao="' + cod + '"' + (lig ? " checked" : "") +
            '><b>' + cod + "</b><span>" + a.descricao + "</span></label></td>";
-      CAMPOS.forEach(function (c) {
+      CAMPOS_ESPEC.forEach(function (c) {
         h += '<td><input inputmode="decimal" autocomplete="off" aria-label="' + c.rotulo + " " + cod + '" value="' + campoValor(c, "a:" + cod) + '"' +
              (lig ? "" : " disabled") + ' data-regra="a:' + cod + '" data-campo="' + c.id + '"></td>';
       });
@@ -331,6 +341,7 @@ function iniciarApp(D, nomeUsuario) {
       if (geral) h += '<label class="chave"><input type="checkbox" id="bln-execucao"' + (estado.blnExec ? " checked" : "") + ' title="Considera só os contratos com obra em execução (bln_execucao)"> Somente contratos em execução</label>';
       else h += '<label class="chave"><input type="checkbox" id="bln-' + nome + '"' + (estado.bln[nome] ? " checked" : "") + '> Regra específica</label>';
       CAMPOS.forEach(function (c) {
+        if (!geral && c.id === "simplif") return;  // a planilha usa só o Simplif. da regra geral
         var id = "p-" + nome + "-" + c.id, v = estado.regras[nome][c.id];
         h += '<div class="campo' + (c.principal ? " principal" : "") + '"><label for="' + id + '">' + c.rotulo + '</label>';
         if (geral) h += '<span class="ajuda"><button type="button" aria-label="Ajuda: ' + c.rotulo + '">?</button><span class="dica" role="tooltip">' + c.ajuda + '</span></span>';
@@ -417,9 +428,21 @@ function iniciarApp(D, nomeUsuario) {
 
     h = '<thead><tr><th>Descrição ação</th><th>Cód. ação</th><th class="num">Nec. orç. final</th><th class="num">Disponível LOA</th><th>Dentro disp.</th><th class="num">Saldo</th></tr></thead><tbody>';
     tsvAcao = "Descrição ação\tCód. ação\tNec. orç. final\tDisponível LOA\tDentro disp.\tSaldo\n";
-    ac.itens.forEach(function (it) {
+    var anterior = null;
+    ORDEM_ACOES.forEach(function (i) {
+      var it = ac.itens[i], grupo = D.acoes[i].secretaria;  // subtítulo por secretaria (aba acao_ajustada, coluna "secretaria")
+      if (grupo !== anterior) {  // linha de subtítulo com o subtotal da secretaria
+        var t = { nec: 0, disp: 0, saldo: 0 }, nome = grupo || "Sem secretaria";
+        ORDEM_ACOES.forEach(function (j) {
+          if (D.acoes[j].secretaria === grupo) { t.nec += ac.itens[j].nec; t.disp += ac.itens[j].disp; t.saldo += ac.itens[j].saldo; }
+        });
+        h += '<tr class="grupo"><td colspan="2">' + nome + '</td><td class="num">' + fmt(t.nec, 2) + '</td><td class="num">' + fmt(t.disp, 2) +
+             '</td><td></td><td class="num">' + fmt(t.saldo, 2) + "</td></tr>";
+        tsvAcao += [nome, "", fmt(t.nec, 2), fmt(t.disp, 2), "", fmt(t.saldo, 2)].join("\t") + "\n";
+        anterior = grupo;
+      }
       h += "<tr><td>" + it.descricao + "</td><td>" + it.codigo + '</td><td class="num">' + fmt(it.nec, 2) + '</td><td class="num">' + fmt(it.disp, 2) +
-           '</td><td class="' + (it.dentro === "Não" ? "nao" : "sim") + '">' + it.dentro + '</td><td class="num">' + fmt(it.saldo, 2) + "</td></tr>";
+           '</td><td class="' + (it.dentro === "Não" ? "nao" : "sim") + '">' + it.dentro + '</td><td class="num ' + (it.saldo < 0 ? "nao" : "sim") + '">' + fmt(it.saldo, 2) + "</td></tr>";
       tsvAcao += [it.descricao, it.codigo, fmt(it.nec, 2), fmt(it.disp, 2), it.dentro, fmt(it.saldo, 2)].join("\t") + "\n";
     });
     document.getElementById("tab-acao").innerHTML = h + "</tbody>";

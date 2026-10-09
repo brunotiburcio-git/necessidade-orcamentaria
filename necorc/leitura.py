@@ -79,6 +79,7 @@ class Entrada:
     parametros: Parametros                        # valores salvos na planilha
     nomes_secretarias_resumo: list[Any]           # L11:O11
     acoes_resumo: list[tuple[int, Any, Any]]      # (linha, K descrição, L código) de 26 a 45
+    acao_secretaria: dict[str, str]               # acao_ajustada!B:D: ação LOA atual -> secretaria
     excel_view: list[dict[str, Any]] = field(default_factory=list)   # valores calculados pelo Excel
     excel_param: dict[str, Any] = field(default_factory=dict)        # células da aba de parâmetros
 
@@ -145,6 +146,7 @@ def ler_planilha(caminho: str | Path) -> Entrada:
         ac += [[None] * 4] * (32 - len(ac))
         acao_tabela = [(r[0], r[1]) for r in ac[0:29]]     # A1:B29
         acao_ajustes = [(r[0], r[1]) for r in ac[28:32]]   # A29:B32
+        acao_secretaria = {str(r[1]): str(r[3]) for r in ac[1:28] if r[1] is not None and r[3] is not None}
 
         # ---------------- Painel SPOA - RP3!C8:H50 ----------------
         painel = [(r[2], r[7]) for r in wb[ABA_PAINEL].iter_rows(min_row=8, max_row=50, max_col=8, values_only=True)
@@ -172,4 +174,5 @@ def ler_planilha(caminho: str | Path) -> Entrada:
     return Entrada(arquivo=caminho, linhas=linhas, siafi=siafi, necfin=necfin,
                    acao_tabela=acao_tabela, acao_ajustes=acao_ajustes, painel=painel,
                    parametros=parametros, nomes_secretarias_resumo=nomes, acoes_resumo=acoes,
+                   acao_secretaria=acao_secretaria,
                    excel_view=excel_view, excel_param=p)

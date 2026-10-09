@@ -92,7 +92,7 @@ def exportar(entrada: Entrada) -> dict:
     painel_h = [h for _, h in entrada.painel]
     from .excel import somases
     acao = [r["ação ajustada"] for r in linhas]
-    acoes = [{"descricao": desc, "codigo": str(cod),
+    acoes = [{"descricao": desc, "codigo": str(cod), "secretaria": entrada.acao_secretaria.get(str(cod), ""),
               "disponivel_loa": somases(painel_h, (painel_c, cod)) / 1000000,
               "linhas": [i for i, a in enumerate(acao) if criterio_ok(a, cod)]}
              for _, desc, cod in entrada.acoes_resumo]
