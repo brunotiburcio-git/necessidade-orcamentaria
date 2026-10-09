@@ -175,3 +175,13 @@ h2::before, h3::before {
 }
 /* campos desligados ficam apagados */
 .stNumberInput input:disabled { opacity: 0.45; }
+
+/* cards das secretarias mais compactos */
+.st-key-card_SEMOB, .st-key-card_SNSA, .st-key-card_SNP, .st-key-card_SNH {
+    padding: 0.75rem 0.85rem !important;
+    gap: 0.35rem !important;
+}
+.st-key-card_SEMOB [data-testid="stWidgetLabel"] p, .st-key-card_SNSA [data-testid="stWidgetLabel"] p,
+.st-key-card_SNP [data-testid="stWidgetLabel"] p, .st-key-card_SNH [data-testid="stWidgetLabel"] p {
+    font-size: 0.82rem !important;
+}

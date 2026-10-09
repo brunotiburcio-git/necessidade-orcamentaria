@@ -29,6 +29,10 @@ CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâme
     ("meses", "Qtd de meses", "Quantidade de meses, linha 8"),
 ]
 
+# rótulos curtos para os cards estreitos das secretarias
+ROTULO_CURTO = {"margem_exec": "Margem (%)", "simplif": "Simplificado (%)", "piso": "Piso (%)",
+                "teto": "Teto (%)", "meses": "Meses"}
+
 st.set_page_config(page_title="Necessidade orçamentária", layout="wide")
 st.markdown(f"<style>{(RAIZ / 'assets' / 'style.css').read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
@@ -144,14 +148,14 @@ with st.container(border=True, key="card_geral"):
 
 st.markdown('<div class="legenda" style="margin-top:1rem">Regras específicas por secretaria</div>',
             unsafe_allow_html=True)
-cols = st.columns(4)
+cols = st.columns([1, 1, 1, 1, 1.2])  # última coluna fica vazia: cards mais estreitos
 for col, sec in zip(cols, SECRETARIAS):
     with col, st.container(border=True, key=f"card_{sec}"):
         st.markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
-        ligada = st.toggle("Aplicar regra específica", key=chave(sec, "bln"),
+        ligada = st.toggle("Regra específica", key=chave(sec, "bln"),
                            help=f"bln_{sec.lower()}: ligado = regra da secretaria; desligado = regra geral")
-        for campo, rotulo, ajuda in CAMPOS:
-            campo_numero(sec, campo, rotulo, ajuda, desabilitado=not ligada)
+        for campo, _, ajuda in CAMPOS:
+            campo_numero(sec, campo, ROTULO_CURTO[campo], ajuda, desabilitado=not ligada)
 
 parametros = parametros_do_estado()
 linhas = calcular(entrada, parametros)
