@@ -9,7 +9,9 @@ _ritmo (BB/BF:BI), BJ, BL, BN, BQ, BS, BT, BU, BV e as tabelas resumo.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+BRASILIA = timezone(timedelta(hours=-3), "Brasília")  # sem horário de verão desde 2019
 
 from .excel import criterio_ok, eh_numero, igual
 from .leitura import SECRETARIAS, Entrada, Parametros
@@ -100,7 +102,7 @@ def exportar(entrada: Entrada) -> dict:
 
     return {
         "arquivo": entrada.arquivo.name,
-        "gerado_em": datetime.fromtimestamp(entrada.arquivo.stat().st_mtime).strftime("%d/%m/%Y %H:%M"),
+        "gerado_em": datetime.fromtimestamp(entrada.arquivo.stat().st_mtime, BRASILIA).strftime("%d/%m/%Y %H:%M"),
         "contratos": len(linhas),
         "secretarias": SECRETARIAS,
         "nomes_resumo": [str(n) for n in nomes],
