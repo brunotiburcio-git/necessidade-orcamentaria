@@ -240,7 +240,7 @@ h1 { padding-top: 0 !important; padding-bottom: 0.3rem !important; }
 .sec-titulo { line-height: 1.2; margin: 0; }
 /* menos margem lateral: mais espaço para os campos em telas de notebook */
 [data-testid="stMainBlockContainer"], .block-container { padding-left: 2rem !important; padding-right: 2rem !important; max-width: 1700px; }
-[class*="st-key-card_S"] [data-testid="stWidgetLabel"] p { font-size: 0.85rem !important; white-space: nowrap; }
+[class*="st-key-card_S"] [data-testid="stWidgetLabel"] p { font-size: 0.8rem !important; white-space: nowrap; }
 
 /* ---------- Botões de tema na barra lateral ---------- */
 .tema-botoes { display: flex; gap: 0.5rem; }
@@ -253,3 +253,20 @@ html:not([data-tema="claro"]) .tema-botoes button[data-escolha="Dark"],
 html[data-tema="claro"] .tema-botoes button[data-escolha="Light"] {
     background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #0b0f19; border-color: transparent; font-weight: 600;
 }
+
+/* ---------- Parâmetros principais da regra geral (margem, sem exec/piso, meses) ---------- */
+.st-key-p_geral_margem_exec [data-testid="stWidgetLabel"] p,
+.st-key-p_geral_piso [data-testid="stWidgetLabel"] p,
+.st-key-p_geral_meses [data-testid="stWidgetLabel"] p {
+    color: var(--accent) !important; font-weight: 700; font-size: 0.9rem !important; white-space: nowrap;
+}
+.st-key-p_geral_margem_exec [data-testid="stNumberInputContainer"],
+.st-key-p_geral_piso [data-testid="stNumberInputContainer"],
+.st-key-p_geral_meses [data-testid="stNumberInputContainer"] {
+    border: 2px solid var(--accent) !important; box-shadow: 0 0 10px var(--accent-glow);
+}
+.st-key-p_geral_margem_exec input, .st-key-p_geral_piso input, .st-key-p_geral_meses input { font-weight: 700; }
+
+/* botão "Restaurar parâmetros da planilha" menor */
+.st-key-restaurar button { min-height: 0 !important; padding: 0.25rem 0.9rem !important; }
+.st-key-restaurar button p { font-size: 0.8rem !important; }

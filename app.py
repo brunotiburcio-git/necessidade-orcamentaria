@@ -24,13 +24,15 @@ PADRAO = CONFIG.get("padrao_arquivo", "*.xlsx")
 CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâmetros)
     ("margem_exec", "Margem (%)", "Margem sobre desempenho atual (com execução), linha 4"),
     ("simplif", "Simplificado (%)", "Regime simplificado (com execução), linha 5"),
-    ("piso", "Piso mínimo (%)", "Piso mínimo (sem execução), linha 6"),
+    ("piso", "Sem exec/piso (%)", "Piso mínimo (sem execução), linha 6"),
     ("teto", "Teto máximo (%)", "Teto máximo (com alta execução), linha 7"),
     ("meses", "Qtd de meses", "Quantidade de meses, linha 8"),
 ]
 
 # rótulos curtos para os cards estreitos das secretarias
-ROTULO_CURTO = {"margem_exec": "Margem (%)", "simplif": "Simplif. (%)", "piso": "Piso (%)",
+PRINCIPAIS = ("margem_exec", "piso", "meses")  # parâmetros principais do modelo (recebem destaque)
+
+ROTULO_CURTO = {"margem_exec": "Margem (%)", "simplif": "Simplif. (%)", "piso": "Sem exec/piso (%)",
                 "teto": "Teto (%)", "meses": "Meses"}
 
 st.set_page_config(page_title="Necessidade orçamentária", layout="wide")
@@ -90,7 +92,7 @@ def carregar_parametros_no_estado(p: Parametros):
         for sec in SECRETARIAS:
             st.session_state[chave(sec, campo)] = conv(getattr(p.secretaria[sec], campo))
     for sec in SECRETARIAS:
-        st.session_state[chave(sec, "bln")] = p.bln_secretaria[sec]
+        st.session_state[chave(sec, "bln")] = False  # padrão: regra geral; o usuário liga a regra específica
     st.session_state["p_bln_execucao"] = p.bln_execucao
 
 
@@ -165,7 +167,7 @@ st.title("Necessidade orçamentária: modelo preditivo")
 st.subheader("Parâmetros")
 
 # Layout: regra geral à esquerda; as 4 secretarias em grade 2x2 à direita (tudo visível sem rolar)
-esq, dir_ = st.columns([1, 1.7], gap="medium")
+esq, dir_ = st.columns([1.1, 1.7], gap="medium")
 
 with esq:
     st.markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
@@ -178,7 +180,7 @@ with esq:
                     campo_numero("geral", campo, ROTULO_CURTO[campo], ajuda)
         st.toggle("Somente contratos em execução", key="p_bln_execucao",
                   help="bln_execucao: afeta a linha 'Nec orçamentária final (bln_execucao)'.")
-        st.button("Restaurar parâmetros da planilha", width="stretch",
+        st.button("Restaurar parâmetros da planilha", key="restaurar", help="Volta aos valores da planilha (regras específicas desligadas)",
                   on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
 
 with dir_:
@@ -190,9 +192,10 @@ with dir_:
                 topo[0].markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
                 # sem ícone de ajuda para o rótulo caber inteiro (ligado = regra da secretaria; desligado = regra geral)
                 ligada = topo[1].toggle("Específica", key=chave(sec, "bln"))
-                campos = [(c, ROTULO_CURTO[c], a) for c, _, a in CAMPOS]
-                for grupo in (campos[0:3], campos[3:5]):
-                    for c3, (campo, rotulo, ajuda) in zip(st.columns(3), grupo):
+                # 1ª linha: os 3 principais (mesma ordem da regra geral); 2ª linha: os outros dois
+                campos = {c: (c, ROTULO_CURTO[c], a) for c, _, a in CAMPOS}
+                for grupo in ([campos[c] for c in PRINCIPAIS], [campos["simplif"], campos["teto"]]):
+                    for c3, (campo, rotulo, ajuda) in zip(st.columns([1, 1.45, 0.75], gap="small"), grupo):
                         with c3:
                             campo_numero(sec, campo, rotulo, None, desabilitado=not ligada)
 
