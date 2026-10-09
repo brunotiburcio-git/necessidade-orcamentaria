@@ -23,12 +23,34 @@ PASTA = (RAIZ / CONFIG.get("pasta_planilhas", "dados")).resolve()
 PADRAO = CONFIG.get("padrao_arquivo", "*.xlsx")
 ARQ_USUARIOS = PASTA / CONFIG.get("arquivo_usuarios", "usuarios.xlsx")
 
-CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâmetros)
-    ("margem_exec", "Margem (%)", "Margem sobre desempenho atual (com execução), linha 4"),
-    ("simplif", "Simplificado (%)", "Regime simplificado (com execução), linha 5"),
-    ("piso", "Sem exec/piso (%)", "Piso mínimo (sem execução), linha 6"),
-    ("teto", "Teto máximo (%)", "Teto máximo (com alta execução), linha 7"),
-    ("meses", "Qtd de meses", "Quantidade de meses, linha 8"),
+CAMPOS = [  # (atributo, rótulo na tela, explicação mostrada no "?" da regra geral)
+    ("margem_exec", "Margem (%)",
+     "Percentual de margem a ser aplicado sobre ritmo de execução do contrato.\n\n"
+     "**Exemplo:**\n"
+     "- Contrato executa 1% ao mês\n"
+     "- Usuário escolheu 25% de margem\n"
+     "- Usuário escolheu 3 meses no campo Meses\n\n"
+     "Então o ritmo de execução prevista será de 1,25%.\n\n"
+     "**Resultado:** execução real x margem x meses"),
+    ("simplif", "Simplificado (%)",
+     "Para os contratos do regime simplificado, a necessidade orçamentária prevê um valor padrão de "
+     "necessidade orçamentária.\n\n"
+     "Ou seja, 50% significa que para os contratos em execução, deve-se garantir 50% do valor do "
+     "repasse do contrato."),
+    ("piso", "Sem exec/piso (%)",
+     "Para os contratos sem execução, será considerado um percentual mínimo do valor de repasse a ser "
+     "garantido vezes a quantidade de meses.\n\n"
+     "**Exemplo:**\n"
+     "- Contrato executou 0% nos últimos 3, 6 ou 12 meses (sem execução)\n"
+     "- Usuário escolheu 1% no campo Sem exec/piso\n"
+     "- Usuário escolheu 3 meses no campo Meses\n\n"
+     "Então o modelo irá prever um valor mínimo de 3% do valor de repasse para cada contrato.\n\n"
+     "**Resultado:** valor repasse x sem exec/piso x meses"),
+    ("teto", "Teto máximo (%)",
+     "Percentual máximo de execução prevista.\n\n"
+     "Ou seja, a execução prevista não pode ser superior a 100% ao mês."),
+    ("meses", "Qtd de meses",
+     "Quantidade de meses para qual o usuário quer projetar a necessidade orçamentária."),
 ]
 
 # rótulos curtos para os cards estreitos das secretarias
@@ -118,7 +140,7 @@ def campo_numero(nome_regra: str, campo: str, rotulo: str, ajuda: str, desabilit
                         step=1 if isinstance(v, int) else 1.0, help=ajuda, disabled=desabilitado)
     else:
         st.number_input(rotulo, key=chave(nome_regra, campo), min_value=0.0, step=0.1, format="%.1f",
-                        help=f"{ajuda}. Em %: 20 = 20%" if ajuda else None, disabled=desabilitado)
+                        help=ajuda, disabled=desabilitado)
 
 
 # ---------------------------------------------------------------------------
