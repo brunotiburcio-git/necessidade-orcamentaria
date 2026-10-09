@@ -39,6 +39,17 @@ No VS Code: *File > Open Folder* na pasta do projeto e, se quiser, selecione o i
 5. "Gerar arquivo Excel com os resultados" baixa os resumos, os parâmetros usados e o detalhe por
    contrato.
 
+### Usuários e senhas
+
+O acesso é controlado pela planilha `dados/usuarios.xlsx` (não vai para o GitHub), com as colunas
+`usuario | nome | perfil | senha`:
+
+- **admin**: escolhe a planilha, recarrega e vê as opções de desenvolvedor do menu ⋮;
+- **consulta**: altera os parâmetros e vê os resultados da planilha salva mais recentemente.
+
+Mudanças na planilha de usuários valem no próximo acesso, sem reiniciar. O login continua ao apertar
+F5 (código no endereço da página, `?acesso=...`); "Sair" na barra lateral encerra.
+
 ## 3. O que o sistema lê da planilha
 
 | Aba | Intervalo | Uso |

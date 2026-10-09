@@ -300,3 +300,6 @@ html[data-tema="claro"] .tema-botoes button[data-escolha="Light"] {
 @media (max-width: 1500px) {
     [class*="st-key-card"] .stNumberInput { display: block; }
 }
+
+/* botão Deploy escondido (o sistema é local) */
+[data-testid="stAppDeployButton"] { display: none !important; }

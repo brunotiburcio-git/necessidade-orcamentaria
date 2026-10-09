@@ -15,11 +15,13 @@ import streamlit as st
 from necorc.exportar import gerar_excel, tabela_acoes, tabela_detalhe, tabela_secretarias
 from necorc.leitura import SECRETARIAS, Entrada, Parametros, Regra, ler_planilha
 from necorc.modelo import calcular
+from necorc.usuarios import conferir, gerar_codigo, ler_usuarios, usuario_do_codigo
 
 RAIZ = Path(__file__).resolve().parent
 CONFIG = json.loads((RAIZ / "config.json").read_text(encoding="utf-8"))
 PASTA = (RAIZ / CONFIG.get("pasta_planilhas", "dados")).resolve()
 PADRAO = CONFIG.get("padrao_arquivo", "*.xlsx")
+ARQ_USUARIOS = PASTA / CONFIG.get("arquivo_usuarios", "usuarios.xlsx")
 
 CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâmetros)
     ("margem_exec", "Margem (%)", "Margem sobre desempenho atual (com execução), linha 4"),
@@ -120,10 +122,49 @@ def campo_numero(nome_regra: str, campo: str, rotulo: str, ajuda: str, desabilit
 
 
 # ---------------------------------------------------------------------------
+# Acesso: usuários e senhas em dados/usuarios.xlsx (perfis admin e consulta)
+# ---------------------------------------------------------------------------
+if not ARQ_USUARIOS.exists():
+    st.error(f"Arquivo de usuários não encontrado: {ARQ_USUARIOS}")
+    st.stop()
+try:
+    usuarios = ler_usuarios(ARQ_USUARIOS)
+except Exception as erro:
+    st.error(f"Não foi possível ler {ARQ_USUARIOS.name}: {erro}")
+    st.stop()
+
+usuario = usuario_do_codigo(PASTA, usuarios, st.query_params.get("acesso"))
+if usuario is None:
+    st.title("Necessidade orçamentária: modelo preditivo")
+    with st.columns([1, 1.2, 1])[1], st.form("login"):
+        st.subheader("Entrar")
+        nome_usuario = st.text_input("Usuário")
+        senha = st.text_input("Senha", type="password")
+        if st.form_submit_button("Entrar", type="primary", width="stretch"):
+            u = conferir(usuarios, nome_usuario, senha)
+            if u:
+                st.query_params["acesso"] = gerar_codigo(PASTA, u)  # mantém o acesso ao apertar F5
+                st.rerun()
+            st.error("Usuário ou senha inválidos.")
+    st.stop()
+
+st.sidebar.markdown(f"**{usuario.nome}**  \n{'Administrador' if usuario.admin else 'Consulta'}")
+if st.sidebar.button("Sair"):
+    st.query_params.clear()
+    st.session_state.clear()
+    st.rerun()
+if not usuario.admin:
+    # perfil consulta: esconde do menu ⋮ as opções de desenvolvedor
+    st.markdown("""<style>
+[data-testid="stMainMenuItem-rerun"], [data-testid="stMainMenuItem-autoRerun"],
+[data-testid="stMainMenuItem-clearCache"] { display: none !important; }
+</style>""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
 # Barra lateral: escolha da planilha
 # ---------------------------------------------------------------------------
 st.sidebar.header("Base de dados")
-arquivos = sorted((a for a in PASTA.glob(PADRAO) if not a.name.startswith("~$")),
+arquivos = sorted((a for a in PASTA.glob(PADRAO) if not a.name.startswith("~$") and a != ARQ_USUARIOS),
                   key=lambda a: a.stat().st_mtime, reverse=True)
 if not arquivos:
     st.sidebar.error(f"Nenhuma planilha encontrada em {PASTA}")
@@ -131,11 +172,17 @@ if not arquivos:
             "A pasta pode ser alterada no arquivo config.json.")
     st.stop()
 
-escolhido = st.sidebar.selectbox(
-    "Planilha (mais recente primeiro)", arquivos,
-    format_func=lambda a: f"{a.name}  ({datetime.fromtimestamp(a.stat().st_mtime):%d/%m/%Y %H:%M})")
-if st.sidebar.button("Recarregar planilha"):
-    carregar.clear()
+def rotulo_arquivo(a: Path) -> str:
+    return f"{a.name}  ({datetime.fromtimestamp(a.stat().st_mtime):%d/%m/%Y %H:%M})"
+
+
+if usuario.admin:
+    escolhido = st.sidebar.selectbox("Planilha (mais recente primeiro)", arquivos, format_func=rotulo_arquivo)
+    if st.sidebar.button("Recarregar planilha"):
+        carregar.clear()
+else:  # consulta: sempre a planilha salva mais recentemente
+    escolhido = arquivos[0]
+    st.sidebar.caption(f"Planilha: {rotulo_arquivo(escolhido)}")
 entrada = carregar(str(escolhido), escolhido.stat().st_mtime)
 st.sidebar.caption(f"{len(entrada.linhas):,} contratos lidos da aba da view".replace(",", "."))
 # Botões de tema: gravam a escolha onde o Streamlit guarda o tema (a mesma do menu ⋮) e recarregam a página.

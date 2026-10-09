@@ -1,4 +1,5 @@
 {
   "pasta_planilhas": "dados",
-  "padrao_arquivo": "*.xlsx"
+  "padrao_arquivo": "*.xlsx",
+  "arquivo_usuarios": "usuarios.xlsx"
 }
