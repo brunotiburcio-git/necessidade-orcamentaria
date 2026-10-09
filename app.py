@@ -30,7 +30,7 @@ CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâme
 ]
 
 # rótulos curtos para os cards estreitos das secretarias
-ROTULO_CURTO = {"margem_exec": "Margem (%)", "simplif": "Simplificado (%)", "piso": "Piso (%)",
+ROTULO_CURTO = {"margem_exec": "Margem (%)", "simplif": "Simplif. (%)", "piso": "Piso (%)",
                 "teto": "Teto (%)", "meses": "Meses"}
 
 st.set_page_config(page_title="Necessidade orçamentária", layout="wide")
@@ -112,7 +112,7 @@ def campo_numero(nome_regra: str, campo: str, rotulo: str, ajuda: str, desabilit
                         step=1 if isinstance(v, int) else 1.0, help=ajuda, disabled=desabilitado)
     else:
         st.number_input(rotulo, key=chave(nome_regra, campo), min_value=0.0, step=0.1, format="%.1f",
-                        help=f"{ajuda}. Em %: 20 = 20%", disabled=desabilitado)
+                        help=f"{ajuda}. Em %: 20 = 20%" if ajuda else None, disabled=desabilitado)
 
 
 # ---------------------------------------------------------------------------
@@ -147,30 +147,37 @@ st.title("Necessidade orçamentária: modelo preditivo")
 
 st.subheader("Parâmetros")
 
-with st.container(border=True, key="card_geral"):
-    topo = st.columns([3, 2])
-    topo[0].markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
-    topo[0].caption("Usada para todos os contratos, exceto nas secretarias com regra específica ligada.")
-    cols = st.columns(5)
-    for col, (campo, rotulo, ajuda) in zip(cols, CAMPOS):
-        with col:
-            campo_numero("geral", campo, rotulo, ajuda)
-    opcoes = st.columns([3, 2])
-    opcoes[0].toggle("Somente contratos em execução (bln_execucao)", key="p_bln_execucao",
-                     help="Afeta a linha 'Nec orçamentária final (bln_execucao)'.")
-    opcoes[1].button("Restaurar parâmetros da planilha", width="stretch",
-                     on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
+# Layout: regra geral à esquerda; as 4 secretarias em grade 2x2 à direita (tudo visível sem rolar)
+esq, dir_ = st.columns([1, 1.7], gap="medium")
 
-st.markdown('<div class="legenda" style="margin-top:1rem">Regras específicas por secretaria</div>',
-            unsafe_allow_html=True)
-cols = st.columns([1, 1, 1, 1, 0.7])  # última coluna fica vazia: cards mais estreitos
-for col, sec in zip(cols, SECRETARIAS):
-    with col, st.container(border=True, key=f"card_{sec}"):
-        st.markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
-        ligada = st.toggle("Específica", key=chave(sec, "bln"),
-                           help=f"bln_{sec.lower()}: ligado = regra da secretaria; desligado = regra geral")
-        for campo, _, ajuda in CAMPOS:
-            campo_numero(sec, campo, ROTULO_CURTO[campo], ajuda, desabilitado=not ligada)
+with esq:
+    st.markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
+    with st.container(border=True, key="card_geral"):
+        st.caption("Vale para todos os contratos, exceto secretarias com regra específica.")
+        for par in (CAMPOS[0:2], CAMPOS[2:4], CAMPOS[4:5]):
+            cols = st.columns(2)
+            for col, (campo, _, ajuda) in zip(cols, par):
+                with col:
+                    campo_numero("geral", campo, ROTULO_CURTO[campo], ajuda)
+        st.toggle("Somente contratos em execução", key="p_bln_execucao",
+                  help="bln_execucao: afeta a linha 'Nec orçamentária final (bln_execucao)'.")
+        st.button("Restaurar parâmetros da planilha", width="stretch",
+                  on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
+
+with dir_:
+    st.markdown('<div class="legenda">Regras específicas por secretaria</div>', unsafe_allow_html=True)
+    for linha_secs in (SECRETARIAS[0:2], SECRETARIAS[2:4]):
+        for col, sec in zip(st.columns(2), linha_secs):
+            with col, st.container(border=True, key=f"card_{sec}"):
+                topo = st.columns([1, 1.3], vertical_alignment="center")
+                topo[0].markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
+                ligada = topo[1].toggle("Específica", key=chave(sec, "bln"),
+                                        help=f"bln_{sec.lower()}: ligado = regra da secretaria; desligado = regra geral")
+                campos = [(c, ROTULO_CURTO[c], a) for c, _, a in CAMPOS]
+                for grupo in (campos[0:3], campos[3:5]):
+                    for c3, (campo, rotulo, ajuda) in zip(st.columns(3), grupo):
+                        with c3:
+                            campo_numero(sec, campo, rotulo, None, desabilitado=not ligada)
 
 parametros = parametros_do_estado()
 linhas = calcular(entrada, parametros)
@@ -178,14 +185,16 @@ linhas = calcular(entrada, parametros)
 # ---------------------------------------------------------------------------
 # Resultados
 # ---------------------------------------------------------------------------
-LARGURA_TABELAS = [4, 0.7]  # mesma proporção dos cards das secretarias (2ª coluna fica vazia)
+LARGURA_TABELAS = [4, 0.7]  # tabelas um pouco mais estreitas que a página (2ª coluna fica vazia)
 
-st.subheader("Resumo por secretaria (valores em milhões)")
+st.subheader("Resumo")
+st.markdown('<div class="legenda">Por secretaria (valores em milhões)</div>', unsafe_allow_html=True)
 df_sec = tabela_secretarias(entrada, linhas, parametros)
 df_sec = df_sec.rename_axis("Item").reset_index()  # rótulos como coluna comum (mesma cor do restante)
 st.columns(LARGURA_TABELAS)[0].dataframe(df_sec.style.format(fmt_br), width="stretch", hide_index=True)
 
-st.subheader("Resumo por ação orçamentária (valores em milhões)")
+st.markdown('<div class="legenda" style="margin-top:0.8rem">Por ação orçamentária (valores em milhões)</div>',
+            unsafe_allow_html=True)
 df_acao, totais = tabela_acoes(entrada, linhas)
 area = st.columns(LARGURA_TABELAS)[0]
 area.dataframe(

@@ -222,3 +222,22 @@ html[data-tema="claro"] .stButton > button,
 html[data-tema="claro"] .stDownloadButton > button {
     background: linear-gradient(90deg, #22d3ee, #4ade80) !important;
 }
+
+/* ---------- Layout compacto: parâmetros no topo, resultado logo abaixo ---------- */
+/* cabeçalho mais baixo */
+[data-testid="stHeader"] { height: 2.5rem; min-height: 2.5rem; }
+[data-testid="stMainBlockContainer"], .block-container { padding-top: 2.6rem !important; padding-bottom: 2rem !important; }
+h1 { padding-top: 0 !important; padding-bottom: 0.3rem !important; }
+
+/* campos numéricos sem os botões − / + (digite o valor ou use as setas do teclado) */
+[data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] { display: none !important; }
+
+/* cards mais enxutos */
+[class*="st-key-card"] { padding: 0.7rem 0.9rem !important; gap: 0.4rem !important; }
+[class*="st-key-card"] [data-testid="stVerticalBlock"] { gap: 0.4rem; }
+[class*="st-key-card"] .stNumberInput input { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+.legenda { margin-bottom: 0.25rem; }
+.sec-titulo { line-height: 1.2; margin: 0; }
+/* menos margem lateral: mais espaço para os campos em telas de notebook */
+[data-testid="stMainBlockContainer"], .block-container { padding-left: 2rem !important; padding-right: 2rem !important; max-width: 1700px; }
+[class*="st-key-card_S"] [data-testid="stWidgetLabel"] p { font-size: 0.85rem !important; white-space: nowrap; }
