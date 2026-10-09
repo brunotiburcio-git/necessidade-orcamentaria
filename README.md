@@ -113,3 +113,7 @@ publicada para os usuários (login com os usuários de `usuarios.xlsx`, dados ci
 O Python calcula o que não depende dos parâmetros; `web/motor.js` recalcula o resto na página com as
 mesmas fórmulas de `necorc/modelo.py`. O botão "Gerar arquivo Excel com os resultados" gera as mesmas
 4 abas da versão local (`web/vendor/` tem a biblioteca SheetJS usada para montar o .xlsx).
+
+O mesmo comando gera também `docs/index.html`, publicado pelo GitHub Pages
+(Settings > Pages > Branch `main`, pasta `/docs`). Depois de gerar, faça commit e push de `docs/index.html`.
+A página tem só os dados cifrados; as planilhas da pasta `dados` nunca vão para o GitHub.

@@ -1,7 +1,7 @@
 """Gera a versão web (uma página HTML só) com os dados da planilha mais recente da pasta dados/.
 
 Uso:  python gerar_web.py [caminho_da_planilha.xlsx] [caminho_usuarios.xlsx]
-Saída: web/saida/necorc.html (é esse arquivo que é publicado como Artifact)
+Saída: web/saida/necorc.html (Artifact do Claude) e docs/index.html (GitHub Pages)
 
 Os dados vão cifrados (AES-GCM) dentro da página. Cada usuário de usuarios.xlsx recebe uma cópia da
 chave dos dados cifrada com a própria senha (PBKDF2), então sem um usuário e senha válidos a página
@@ -84,9 +84,16 @@ def main():
     pagina = pagina.replace("/*MOTOR*/", motor, 1).replace(
         "/*DADOS*/", json.dumps(proteger(dados, usuarios), separators=(",", ":")), 1)
     pagina = pagina.replace("/*XLSX*/", xlsx, 1)  # por último: o código da biblioteca não passa pelas outras trocas
-    saida = RAIZ / "web" / "saida" / "necorc.html"
+    saida = RAIZ / "web" / "saida" / "necorc.html"   # versão para o Artifact do Claude
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(pagina, encoding="utf-8")
+    # versão para o GitHub Pages (pasta docs/): mesma página com o cabeçalho HTML completo
+    site = RAIZ / "docs" / "index.html"
+    site.parent.mkdir(parents=True, exist_ok=True)
+    site.write_text('<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n'
+                    '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+                    '<meta name="robots" content="noindex">\n</head>\n<body>\n'
+                    + pagina + "\n</body>\n</html>\n", encoding="utf-8")
     print(f"{saida}  ({saida.stat().st_size / 1e6:.2f} MB, {dados['contratos']} contratos de {caminho.name}, "
           f"{len(usuarios)} usuários)")
 
