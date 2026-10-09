@@ -51,15 +51,20 @@ def _regra(r):
             "teto": r.teto, "meses": r.meses}
 
 
-def parametros_json(p: Parametros) -> dict:
+def parametros_json(p: Parametros, codigos_acao: list[str] = ()) -> dict:
+    """Parâmetros para a página. A planilha não tem regra por ação: cada ação começa com os
+    valores da regra geral e desligada (o usuário liga e ajusta no módulo Geral / Ação)."""
     return {"geral": _regra(p.geral), "secretaria": {s: _regra(p.secretaria[s]) for s in SECRETARIAS},
-            "bln_secretaria": dict(p.bln_secretaria), "bln_execucao": p.bln_execucao}
+            "bln_secretaria": dict(p.bln_secretaria), "bln_execucao": p.bln_execucao,
+            "modo": p.modo,
+            "acao": {c: _regra(p.acao.get(c, p.geral)) for c in codigos_acao},
+            "bln_acao": {c: bool(p.bln_acao.get(c, False)) for c in codigos_acao}}
 
 
 def exportar(entrada: Entrada) -> dict:
     linhas = calcular(entrada)  # parâmetros da planilha; só as colunas independentes são usadas
     col = {k: [] for k in ("repasse", "ref", "mm", "execSim", "aExec", "cls", "disp", "aEmp",
-                           "necfin", "dispPos", "bs", "emp", "emExec", "sec")}
+                           "necfin", "dispPos", "bs", "emp", "emExec", "sec", "acao")}
     for r in linhas:
         col["repasse"].append(_num(r["vlr_repasse"] or 0, "vlr_repasse"))
         col["ref"].append(_num(r["exec mensal R$ referencia"], "ref"))
@@ -75,6 +80,9 @@ def exportar(entrada: Entrada) -> dict:
         col["emp"].append(_num(r["vlr_empenhado"] or 0, "vlr_empenhado"))
         col["emExec"].append(igual(r["dsc_situacao_objeto_mcid"], "Em execução"))
         col["sec"].append(_indice(r["secretaria"], SECRETARIAS))
+        # índice da ação ajustada na lista de ações do resumo (-1: fora da lista, usa a regra geral)
+        cod = str(r["ação ajustada"])
+        col["acao"].append(next((k for k, (_, _, c) in enumerate(entrada.acoes_resumo) if str(c) == cod), -1))
 
     nomes = entrada.nomes_secretarias_resumo
     sec_txt = [r["secretaria"] for r in linhas]
@@ -108,7 +116,7 @@ def exportar(entrada: Entrada) -> dict:
         "nomes_resumo": [str(n) for n in nomes],
         "linhas_resumo": linhas_sec,
         "acoes": acoes,
-        "parametros": parametros_json(entrada.parametros),
+        "parametros": parametros_json(entrada.parametros, [a["codigo"] for a in acoes]),
         "col": col,
         "detalhe": {"colunas": colunas, "fixas": fixas, "datas": datas},
     }

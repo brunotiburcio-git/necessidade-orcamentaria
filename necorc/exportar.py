@@ -47,10 +47,16 @@ def gerar_excel(entrada: Entrada, linhas: list[dict], p: Parametros) -> bytes:
         acoes.to_excel(xw, sheet_name="resumo ações", index=False)
         pd.DataFrame(list(totais.items()), columns=["item", "valor"]).to_excel(
             xw, sheet_name="resumo ações", index=False, startrow=len(acoes) + 2)
-        par = [("geral", k, v) for k, v in vars(p.geral).items()]
-        for sec, regra in p.secretaria.items():
-            par += [(sec, k, v) for k, v in vars(regra).items()]
-            par.append((sec, "bln_secretaria", p.bln_secretaria[sec]))
+        par = [("geral", "modelo", "Geral / Ação" if p.modo == "acao" else "Geral / Secretaria")]
+        par += [("geral", k, v) for k, v in vars(p.geral).items()]
+        if p.modo == "acao":
+            for cod, regra in p.acao.items():
+                par += [(cod, k, v) for k, v in vars(regra).items()]
+                par.append((cod, "bln_acao", p.bln_acao.get(cod, False)))
+        else:
+            for sec, regra in p.secretaria.items():
+                par += [(sec, k, v) for k, v in vars(regra).items()]
+                par.append((sec, "bln_secretaria", p.bln_secretaria[sec]))
         par.append(("geral", "bln_execucao", p.bln_execucao))
         pd.DataFrame(par, columns=["regra", "parâmetro", "valor"]).to_excel(
             xw, sheet_name="parâmetros usados", index=False)

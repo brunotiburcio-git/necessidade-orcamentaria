@@ -60,6 +60,11 @@ class Parametros:
     secretaria: dict[str, Regra]
     bln_secretaria: dict[str, bool]
     bln_execucao: bool
+    # Módulo "Geral / Ação" (só no sistema; não existe na planilha): regra específica por ação ajustada.
+    # modo = "secretaria" (padrão, igual ao Excel) ou "acao"; chaves = código da ação como texto.
+    modo: str = "secretaria"
+    acao: dict[str, Regra] = field(default_factory=dict)
+    bln_acao: dict[str, bool] = field(default_factory=dict)
 
 
 @dataclass

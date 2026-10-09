@@ -33,6 +33,15 @@
     return Number(m[1] + cab + "e" + (ponto - manter));
   }
 
+  // regra das colunas BF:BI (regra_especifica do modelo.py): módulo secretaria (Excel) ou módulo ação
+  function regraEspecifica(D, p, i, sec) {
+    if (p.modo === "acao") {
+      var a = D.col.acao[i], cod = a >= 0 ? D.acoes[a].codigo : null;
+      return cod !== null && p.bln_acao[cod] ? p.acao[cod] : p.geral;
+    }
+    return p.bln_secretaria[sec] ? p.secretaria[sec] : p.geral;
+  }
+
   function situacao(c, i, g) {  // BC Coluna1
     if (!(c.aExec[i] > 0)) return "situacao0";
     if (!c.execSim[i]) return "situacao1";
@@ -67,10 +76,7 @@
       var ritmoSN = 0;
       for (var s = 0; s < S; s++) {
         var v = 0;
-        if (aExec > 0 && c.sec[i] === s) {
-          var sec = D.secretarias[s];
-          v = ritmo(c, i, p.bln_secretaria[sec] ? p.secretaria[sec] : g);
-        }
+        if (aExec > 0 && c.sec[i] === s) v = ritmo(c, i, regraEspecifica(D, p, i, D.secretarias[s]));
         if (completo) out.porSec[s][i] = v;
         ritmoSN += v;
       }

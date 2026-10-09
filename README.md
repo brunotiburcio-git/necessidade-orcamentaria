@@ -117,3 +117,10 @@ mesmas fórmulas de `necorc/modelo.py`. O botão "Gerar arquivo Excel com os res
 O mesmo comando gera também `docs/index.html`, publicado pelo GitHub Pages
 (Settings > Pages > Branch `main`, pasta `/docs`). Depois de gerar, faça commit e push de `docs/index.html`.
 A página tem só os dados cifrados; as planilhas da pasta `dados` nunca vão para o GitHub.
+
+### Módulos (menu lateral da versão web)
+
+- **Geral / Secretaria**: o modelo da planilha (regra geral + regra específica por secretaria).
+- **Geral / Ação**: mesma conta, mas a regra específica é escolhida pela ação ajustada do contrato
+  (coluna "ação ajustada"). Esse módulo não existe na planilha: cada ação começa com a regra geral e
+  desligada. No Python é `Parametros.modo = "acao"` (`regra_especifica` em `necorc/modelo.py`).

@@ -51,6 +51,15 @@ def _ritmo(r: dict, regra: Regra) -> float:
     return 0
 
 
+def regra_especifica(r: dict, p: Parametros, sec: str) -> Regra:
+    """Regra usada nas colunas BF:BI. Módulo secretaria (Excel): bln_<secretaria>.
+    Módulo ação (só no sistema): regra da ação ajustada do contrato, se estiver ligada."""
+    if p.modo == "acao":
+        cod = str(r["ação ajustada"])
+        return p.acao[cod] if p.bln_acao.get(cod) else p.geral
+    return p.secretaria[sec] if p.bln_secretaria[sec] else p.geral
+
+
 def calcular_linha(e: dict[str, Any], p: Parametros, lk: dict[str, Procv]) -> dict[str, Any]:
     g = p.geral
     r = dict(e)
@@ -163,14 +172,13 @@ def calcular_linha(e: dict[str, Any], p: Parametros, lk: dict[str, Procv]) -> di
         be = ritmo_g - disp
     r["necessidade orçamentária preliminar"] = be
 
-    # BF:BI  ritmo por secretaria (regra específica se bln_<secretaria> = VERDADEIRO)
+    # BF:BI  ritmo por secretaria (regra específica se bln_<secretaria> = VERDADEIRO; no módulo ação, a da ação)
     for sec in SECRETARIAS:
         col = f"ritmo parametros {sec}"
         if a_exec <= 0 or not igual(r["secretaria"], sec):
             r[col] = 0
         else:
-            regra = p.secretaria[sec] if p.bln_secretaria[sec] else g
-            r[col] = _ritmo(r, regra)
+            r[col] = _ritmo(r, regra_especifica(r, p, sec))
     # BJ
     ritmo_sn = 0
     for sec in SECRETARIAS:

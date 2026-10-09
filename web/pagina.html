@@ -39,6 +39,20 @@ body { min-height: 100vh;
     linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: auto, 40px 40px, 40px 40px;
 }
+/* menu lateral dos módulos */
+.app { display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); min-height: 100vh; }
+.menu { position: sticky; top: 0; align-self: start; height: 100vh; display: flex; flex-direction: column; gap: .45rem;
+        padding: .8rem .5rem; background: var(--surface); border-right: 1px solid var(--line); }
+.menu-titulo { font-family: var(--mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 0 .3rem .2rem; }
+.menu button { font: inherit; font-size: .8rem; line-height: 1.25; text-align: left; padding: .5rem .55rem; border-radius: 8px; cursor: pointer;
+               border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+.menu button:hover { border-color: var(--accent); }
+.menu button[aria-pressed="true"] { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #0b0f19; font-weight: 700; border-color: transparent; }
+@media (max-width: 820px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .menu { position: static; height: auto; flex-direction: row; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
+  .menu br { display: none; }
+}
 .pagina { max-width: 1760px; margin: 0 auto; padding-inline: clamp(16px, 2.5vw, 40px); padding-block: .6rem 2rem;
           display: grid; gap: .9rem; }
 
@@ -106,6 +120,26 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 .exportar .btn { font-size: .95rem; padding: .55rem 1.1rem; border-color: var(--accent); color: var(--accent); }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 
+/* módulo Geral / Ação: regras por ação em tabelas compactas, lado a lado */
+.blocos.modo-acao { grid-template-columns: minmax(17rem, 1.2fr) 4fr; }
+@media (max-width: 1500px) { .blocos.modo-acao { grid-template-columns: 19rem minmax(0, 1fr); } }
+@media (max-width: 820px) { .blocos.modo-acao { grid-template-columns: minmax(0, 1fr); } }
+.acoes-param { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; align-items: start; min-width: 0; }
+@media (max-width: 1500px) { .acoes-param { grid-template-columns: minmax(0, 1fr); } }
+.acoes-param table { width: 100%; table-layout: fixed; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent-2);
+                     border-radius: var(--radius); border-collapse: separate; border-spacing: 0; font-size: .85rem; }
+.acoes-param th { font-size: .72rem; padding: .3rem .3rem; text-align: right; white-space: normal; line-height: 1.1; width: 3.9rem; }
+.acoes-param th:first-child { text-align: left; padding-left: .6rem; width: auto; }
+.acoes-param td { padding: .14rem .3rem; overflow: hidden; }
+.acoes-param td:first-child { padding-left: .6rem; }
+.acoes-param .chave { font-size: .85rem; gap: .45rem; min-width: 0; }
+.acoes-param .chave b { font-family: var(--mono); font-size: .8rem; color: var(--title); }
+.acoes-param .chave span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.acoes-param input[data-campo] { width: 100%; box-sizing: border-box; font: inherit; font-size: .85rem; text-align: right; font-variant-numeric: tabular-nums;
+                                  padding: .12rem .4rem; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+.acoes-param input[data-campo]:disabled { opacity: .45; }
+.acoes-param input.invalido { border-color: var(--bad); }
+
 /* tabelas */
 .tabela-box { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-width: 1500px; }
 table { border-collapse: collapse; width: 100%; font-size: .92rem; font-variant-numeric: tabular-nums; }
@@ -152,7 +186,13 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
     <button type="submit" class="entrar" id="login-entrar">Entrar</button>
   </form>
 </div>
-<div class="pagina" id="pagina" hidden>
+<div class="app" id="pagina" hidden>
+<nav class="menu" aria-label="Modelo">
+  <div class="menu-titulo">Modelo</div>
+  <button type="button" data-modo="secretaria">Geral /<br>Secretaria</button>
+  <button type="button" data-modo="acao">Geral /<br>Ação</button>
+</nav>
+<div class="pagina">
   <header class="topo">
     <div>
       <h1>Necessidade orçamentária: modelo preditivo</h1>
@@ -169,7 +209,7 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
 
   <section class="secao" aria-labelledby="t-param">
     <h2 id="t-param">Parâmetros</h2>
-    <div class="legendas"><div class="legenda">Regra geral</div><div class="legenda">Regras específicas por secretaria</div></div>
+    <div class="legendas"><div class="legenda">Regra geral</div><div class="legenda" id="legenda-especificas">Regras específicas por secretaria</div></div>
     <div class="blocos" id="blocos"></div>
   </section>
 
@@ -185,6 +225,7 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
     <div class="exportar"><button type="button" class="btn" id="exportar">Gerar arquivo Excel com os resultados</button></div>
     <p class="rodape">Os cálculos reproduzem as fórmulas da planilha do modelo preditivo. "Copiar tabela" copia os valores para colar no Excel. O arquivo Excel traz os resumos, os parâmetros usados e o detalhe de todos os contratos.</p>
   </section>
+</div>
 </div>
 <div class="aviso" id="aviso" hidden></div>
 
@@ -216,9 +257,16 @@ function iniciarApp(D, nomeUsuario) {
   function fmtCampo(campo, v) { return campo.pct ? fmt(v, 1) : String(v); }
 
   // estado: valores digitados (em % para os percentuais) e o valor usado nas contas
-  var estado;
+  var estado, CODS = D.acoes.map(function (a) { return a.codigo; });
+  var modo = "secretaria";
+  try { modo = sessionStorage.getItem("necorc-modo") === "acao" ? "acao" : "secretaria"; } catch (e) {}
   function estadoInicial() {
-    var p = D.parametros, e = { regras: {}, bln: {}, blnExec: p.bln_execucao };
+    var p = D.parametros, e = { regras: {}, bln: {}, blnAcao: {}, blnExec: p.bln_execucao };
+    CODS.forEach(function (cod) {  // a planilha não tem regra por ação: começa com a regra geral, desligada
+      var r = p.acao[cod]; e.regras["a:" + cod] = {};
+      CAMPOS.forEach(function (c) { e.regras["a:" + cod][c.id] = r[c.id]; });
+      e.blnAcao[cod] = false;
+    });
     ["geral"].concat(SECS).forEach(function (nome) {
       var r = nome === "geral" ? p.geral : p.secretaria[nome];
       e.regras[nome] = {};
@@ -231,7 +279,9 @@ function iniciarApp(D, nomeUsuario) {
   function parametros() {
     return { geral: estado.regras.geral,
              secretaria: SECS.reduce(function (o, s) { o[s] = estado.regras[s]; return o; }, {}),
-             bln_secretaria: estado.bln, bln_execucao: estado.blnExec };
+             bln_secretaria: estado.bln, bln_execucao: estado.blnExec, modo: modo,
+             acao: CODS.reduce(function (o, c) { o[c] = estado.regras["a:" + c]; return o; }, {}),
+             bln_acao: estado.blnAcao };
   }
 
   function lerNumero(txt) {
@@ -243,13 +293,34 @@ function iniciarApp(D, nomeUsuario) {
 
   // ---------- parâmetros ----------
   var blocos = document.getElementById("blocos");
+  function campoValor(c, regra) {
+    var v = estado.regras[regra][c.id];
+    return fmtCampo(c, c.pct ? Motor.paraPct(v) : v);
+  }
+  function tabelaAcoes(itens) {  // regras específicas por ação: uma linha por ação
+    var h = '<table><thead><tr><th>Ação (regra específica)</th>' +
+            CAMPOS.map(function (c) { return '<th title="' + c.rotulo + '">' + (c.id === "piso" ? "Piso %" : c.rotulo.replace(" (%)", " %")) + "</th>"; }).join("") + "</tr></thead><tbody>";
+    itens.forEach(function (a) {
+      var cod = a.codigo, lig = estado.blnAcao[cod];
+      h += '<tr><td><label class="chave" title="' + cod + " · " + a.descricao + '"><input type="checkbox" data-acao="' + cod + '"' + (lig ? " checked" : "") +
+           '><b>' + cod + "</b><span>" + a.descricao + "</span></label></td>";
+      CAMPOS.forEach(function (c) {
+        h += '<td><input inputmode="decimal" autocomplete="off" aria-label="' + c.rotulo + " " + cod + '" value="' + campoValor(c, "a:" + cod) + '"' +
+             (lig ? "" : " disabled") + ' data-regra="a:' + cod + '" data-campo="' + c.id + '"></td>';
+      });
+      h += "</tr>";
+    });
+    return h + "</tbody></table>";
+  }
   function montarBlocos() {
     blocos.innerHTML = "";
-    ["geral"].concat(SECS).forEach(function (nome) {
+    blocos.classList.toggle("modo-acao", modo === "acao");
+    document.getElementById("legenda-especificas").textContent = modo === "acao" ? "Regras específicas por ação orçamentária" : "Regras específicas por secretaria";
+    (modo === "acao" ? ["geral"] : ["geral"].concat(SECS)).forEach(function (nome) {
       var geral = nome === "geral", el = document.createElement("div");
       el.className = "bloco" + (geral ? " geral" : "");
       // cabeçalho e 1ª linha com a mesma altura em todos os blocos, para os campos ficarem alinhados
-      var h = '<div class="cabeca"><h3' + (geral ? ' title="Vale para todos, exceto secretarias com regra específica ligada."' : "") + '>' +
+      var h = '<div class="cabeca"><h3' + (geral ? ' title="Vale para todos, exceto ' + (modo === "acao" ? "ações" : "secretarias") + ' com regra específica ligada."' : "") + '>' +
               (geral ? "GERAL" : nome) + '</h3>' +
               (geral ? '<button type="button" class="btn" id="restaurar" title="Restaurar parâmetros da planilha">Restaurar planilha</button>' : "") + '</div>';
       if (geral) h += '<label class="chave"><input type="checkbox" id="bln-execucao"' + (estado.blnExec ? " checked" : "") + ' title="Considera só os contratos com obra em execução (bln_execucao)"> Somente contratos em execução</label>';
@@ -264,7 +335,26 @@ function iniciarApp(D, nomeUsuario) {
       el.innerHTML = h;
       blocos.appendChild(el);
     });
+    if (modo === "acao") {
+      var el = document.createElement("div"), meio = Math.ceil(D.acoes.length / 2);
+      el.className = "acoes-param";
+      el.innerHTML = tabelaAcoes(D.acoes.slice(0, meio)) + tabelaAcoes(D.acoes.slice(meio));
+      blocos.appendChild(el);
+    }
   }
+
+  // ---------- menu de módulos ----------
+  function marcarModo() {
+    document.querySelectorAll(".menu button[data-modo]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.modo === modo)); });
+  }
+  document.querySelectorAll(".menu button[data-modo]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (modo === b.dataset.modo) return;
+      modo = b.dataset.modo;
+      try { sessionStorage.setItem("necorc-modo", modo); } catch (e) {}
+      marcarModo(); montarBlocos(); atualizar();
+    });
+  });
 
   // aplica o valor de um campo/chave e recalcula; chamado ao digitar, ao apertar Enter e ao sair do campo
   function aplicar(t) {
@@ -273,6 +363,10 @@ function iniciarApp(D, nomeUsuario) {
       if (v === null || (c.id === "meses" && v < 1)) { t.classList.add("invalido"); return; }
       t.classList.remove("invalido");
       estado.regras[t.dataset.regra][c.id] = c.pct ? Motor.dePct(v) : v;
+      atualizar();
+    } else if (t.dataset.acao) {
+      estado.blnAcao[t.dataset.acao] = t.checked;
+      t.closest("tr").querySelectorAll("input[data-campo]").forEach(function (i) { i.disabled = !t.checked; });
       atualizar();
     } else if (t.id === "bln-execucao") { estado.blnExec = t.checked; atualizar(); }
     else if (t.id.indexOf("bln-") === 0) {
@@ -366,9 +460,13 @@ function iniciarApp(D, nomeUsuario) {
               ["Faltando", ac.faltando], ["Sobrando", ac.sobrando]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aba2), "resumo ações");
 
-    var aba3 = [["regra", "parâmetro", "valor"]];
+    var aba3 = [["regra", "parâmetro", "valor"], ["geral", "modelo", p.modo === "acao" ? "Geral / Ação" : "Geral / Secretaria"]];
     PARAM_ORDEM.forEach(function (k) { aba3.push(["geral", k, p.geral[k]]); });
-    SECS.forEach(function (s) {
+    if (p.modo === "acao") CODS.forEach(function (c) {
+      PARAM_ORDEM.forEach(function (k) { aba3.push([c, k, p.acao[c][k]]); });
+      aba3.push([c, "bln_acao", p.bln_acao[c]]);
+    });
+    else SECS.forEach(function (s) {
       PARAM_ORDEM.forEach(function (k) { aba3.push([s, k, p.secretaria[s][k]]); });
       aba3.push([s, "bln_secretaria", p.bln_secretaria[s]]);
     });
@@ -443,6 +541,7 @@ function iniciarApp(D, nomeUsuario) {
 
   document.getElementById("usuario-nome").textContent = nomeUsuario;
   estado = estadoInicial();
+  marcarModo();
   montarBlocos();
   atualizar();
 }
