@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Abrir sistema (Streamlit)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "app.py"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Validar planilha contra o Excel",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/validar.py",
+      "args": ["${workspaceFolder}/dados/NecOrc_PAC_aprimorado.xlsx"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

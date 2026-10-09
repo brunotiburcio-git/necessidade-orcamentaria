@@ -1,0 +1,146 @@
+/* Tema escuro "tech" (baseado no style.css do usuário): fundo azul-petróleo, acentos ciano e verde */
+:root {
+    --bg: #0b0f19;
+    --bg-elevated: #111827;
+    --bg-input: #0f1523;
+    --border: #1f2a3d;
+    --border-strong: #2d3b55;
+    --text: #e5e9f0;
+    --text-muted: #b7c4d8;
+    --accent: #22d3ee;
+    --accent-2: #4ade80;
+    --accent-glow: rgba(34, 211, 238, 0.35);
+    --radius: 10px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+}
+
+/* fundo com brilhos e grade sutil */
+[data-testid="stAppViewContainer"] {
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.10), transparent 40%),
+        radial-gradient(circle at 80% 100%, rgba(74, 222, 128, 0.08), transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: auto, auto, 40px 40px, 40px 40px;
+    background-attachment: fixed;
+    font-family: var(--font);
+}
+[data-testid="stHeader"] {
+    background: rgba(11, 15, 25, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+}
+[data-testid="stSidebar"] {
+    background: var(--bg-elevated);
+    border-right: 1px solid var(--border);
+}
+
+/* título principal com gradiente */
+h1 {
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+}
+
+/* subtítulos com barra de acento à esquerda */
+h2, h3 {
+    color: #fff !important;
+    position: relative;
+    padding-left: 0.85rem !important;
+}
+h2::before, h3::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.3em;
+    bottom: 0.3em;
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+
+/* blocos (expanders) como cards */
+[data-testid="stExpander"] details {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+[data-testid="stExpander"] summary {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent) !important;
+}
+
+/* rótulos dos cabeçalhos de cada regra (Regra geral, SEMOB...) */
+.legenda {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+}
+
+/* campos */
+[data-testid="stWidgetLabel"] p { color: var(--text-muted) !important; font-size: 0.85rem; }
+.stNumberInput input, .stSelectbox div[data-baseweb="select"] > div {
+    background: var(--bg-input) !important;
+    border-color: var(--border-strong) !important;
+}
+.stNumberInput div[data-baseweb="input"]:focus-within {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* botões com gradiente ciano -> verde */
+.stButton > button, .stDownloadButton > button {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: #041018 !important;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)) !important;
+    border: none !important;
+    border-radius: 8px;
+    box-shadow: 0 0 20px var(--accent-glow);
+    transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+}
+.stButton > button:hover, .stDownloadButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px var(--accent-glow);
+    filter: brightness(1.08);
+}
+.stButton > button p, .stDownloadButton > button p { color: #041018 !important; }
+
+/* tabelas */
+[data-testid="stDataFrame"] {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+/* indicadores */
+[data-testid="stMetric"] {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    box-shadow: var(--shadow);
+}
+[data-testid="stMetricLabel"] p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem !important;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted) !important;
+}
+[data-testid="stMetricValue"] { color: #fff; }
