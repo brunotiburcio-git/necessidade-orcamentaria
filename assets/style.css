@@ -278,8 +278,9 @@ html[data-tema="claro"] .tema-botoes button[data-escolha="Light"] {
 
 /* ---------- Blocos em 5 colunas: rótulo à esquerda, valor à direita ---------- */
 [class*="st-key-card"] .stNumberInput { display: flex; align-items: center; gap: 0.5rem; }
-[class*="st-key-card"] .stNumberInput > label { flex: 0 0 52%; margin: 0; min-height: 0; }
-[class*="st-key-card"] .stNumberInput > div { flex: 1 1 auto; min-width: 0; }
+[class*="st-key-card"] .stNumberInput > label { flex: 1 1 auto; margin: 0; min-height: 0; }
+/* campos estreitos: os valores são curtos (o maior é 100,0) */
+[class*="st-key-card"] .stNumberInput > div { flex: 0 0 5.2rem; width: 5.2rem; max-width: 5.2rem; }
 [class*="st-key-card"] [data-testid="stWidgetLabel"] p { font-size: 0.85rem !important; white-space: normal !important; line-height: 1.15; }
 [class*="st-key-card"] .stNumberInput input { text-align: right; }
 /* principais (margem, sem exec/piso, meses) em negrito também nas secretarias */
