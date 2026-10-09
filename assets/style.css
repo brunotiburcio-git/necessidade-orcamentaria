@@ -144,3 +144,34 @@ h2::before, h3::before {
     color: var(--text-muted) !important;
 }
 [data-testid="stMetricValue"] { color: #fff; }
+
+/* ---------- Ajustes de leitura e cards de parâmetros ---------- */
+/* rótulos dos campos mais claros */
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] label,
+.stCheckbox label p, [data-testid="stToggle"] label p {
+    color: var(--text) !important;
+    font-weight: 500;
+    font-size: 0.9rem !important;
+}
+[data-testid="stCaptionContainer"] p { color: var(--text-muted) !important; }
+
+/* cards (containers com borda) */
+[class*="st-key-card"] {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+.st-key-card_geral { border-left: 3px solid var(--accent) !important; }
+.st-key-card_SEMOB, .st-key-card_SNSA, .st-key-card_SNP, .st-key-card_SNH {
+    border-top: 3px solid var(--accent-2) !important;
+}
+.sec-titulo {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.04em;
+}
+/* campos desligados ficam apagados */
+.stNumberInput input:disabled { opacity: 0.45; }

@@ -7,6 +7,7 @@ from __future__ import annotations
 import copy
 import json
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 
 import streamlit as st
@@ -20,12 +21,12 @@ CONFIG = json.loads((RAIZ / "config.json").read_text(encoding="utf-8"))
 PASTA = (RAIZ / CONFIG.get("pasta_planilhas", "dados")).resolve()
 PADRAO = CONFIG.get("padrao_arquivo", "*.xlsx")
 
-CAMPOS = [  # (atributo, rótulo da aba de parâmetros, linha)
-    ("margem_exec", "Margem sobre desempenho atual (com execução)", 4),
-    ("simplif", "Regime simplificado (com execução)", 5),
-    ("piso", "Piso mínimo (sem execução)", 6),
-    ("teto", "Teto máximo (com alta execução)", 7),
-    ("meses", "Qtd de meses", 8),
+CAMPOS = [  # (atributo, rótulo na tela, explicação / linha da aba de parâmetros)
+    ("margem_exec", "Margem s/ desempenho (%)", "Margem sobre desempenho atual (com execução), linha 4"),
+    ("simplif", "Regime simplificado (%)", "Regime simplificado (com execução), linha 5"),
+    ("piso", "Piso mínimo (%)", "Piso mínimo (sem execução), linha 6"),
+    ("teto", "Teto máximo (%)", "Teto máximo (com alta execução), linha 7"),
+    ("meses", "Qtd de meses", "Quantidade de meses, linha 8"),
 ]
 
 st.set_page_config(page_title="Necessidade orçamentária", layout="wide")
@@ -48,13 +49,23 @@ def _num(v):
     return int(v) if isinstance(v, (int, float)) and float(v).is_integer() and not isinstance(v, bool) else float(v)
 
 
+def para_pct(fracao) -> float:
+    """0,006 -> 0,6 (%). Feito em decimal para não criar resíduos de ponto flutuante."""
+    return float(Decimal(repr(float(fracao))) * 100)
+
+
+def de_pct(pct) -> float:
+    """0,6 (%) -> 0,006: devolve exatamente o mesmo número que o Excel guarda para 0,6%."""
+    return float(Decimal(repr(float(pct))) / 100)
+
+
 def chave(regra: str, campo: str) -> str:
     return f"p_{regra}_{campo}"
 
 
 def carregar_parametros_no_estado(p: Parametros):
     for campo, _, _ in CAMPOS:
-        conv = _num if campo == "meses" else float
+        conv = _num if campo == "meses" else para_pct
         st.session_state[chave("geral", campo)] = conv(getattr(p.geral, campo))
         for sec in SECRETARIAS:
             st.session_state[chave(sec, campo)] = conv(getattr(p.secretaria[sec], campo))
@@ -65,7 +76,9 @@ def carregar_parametros_no_estado(p: Parametros):
 
 def parametros_do_estado() -> Parametros:
     def regra(nome):
-        return Regra(**{campo: st.session_state[chave(nome, campo)] for campo, _, _ in CAMPOS})
+        return Regra(**{campo: (st.session_state[chave(nome, campo)] if campo == "meses"
+                                else de_pct(st.session_state[chave(nome, campo)]))
+                        for campo, _, _ in CAMPOS})
     return Parametros(
         geral=regra("geral"),
         secretaria={sec: regra(sec) for sec in SECRETARIAS},
@@ -74,14 +87,14 @@ def parametros_do_estado() -> Parametros:
     )
 
 
-def campo_numero(nome_regra: str, campo: str, rotulo: str):
+def campo_numero(nome_regra: str, campo: str, rotulo: str, ajuda: str, desabilitado: bool = False):
     v = st.session_state[chave(nome_regra, campo)]
     if campo == "meses":
         st.number_input(rotulo, key=chave(nome_regra, campo), min_value=1 if isinstance(v, int) else 0.0,
-                        step=1 if isinstance(v, int) else 1.0)
+                        step=1 if isinstance(v, int) else 1.0, help=ajuda, disabled=desabilitado)
     else:
-        st.number_input(rotulo, key=chave(nome_regra, campo), min_value=0.0, step=0.001, format="%.4f",
-                        help="Informe como fração: 0,2 = 20%")
+        st.number_input(rotulo, key=chave(nome_regra, campo), min_value=0.0, step=0.1, format="%.1f",
+                        help=f"{ajuda}. Em %: 20 = 20%", disabled=desabilitado)
 
 
 # ---------------------------------------------------------------------------
@@ -113,23 +126,32 @@ if st.session_state.get("_arquivo") != (str(escolhido), escolhido.stat().st_mtim
 # ---------------------------------------------------------------------------
 st.title("Necessidade orçamentária: modelo preditivo")
 
-with st.expander("Parâmetros", expanded=True):
+st.subheader("Parâmetros")
+
+with st.container(border=True, key="card_geral"):
+    topo = st.columns([3, 2])
+    topo[0].markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
+    topo[0].caption("Usada para todos os contratos, exceto nas secretarias com regra específica ligada.")
     cols = st.columns(5)
-    with cols[0]:
-        st.markdown('<div class="legenda">Regra geral</div>', unsafe_allow_html=True)
-        for campo, rotulo, _ in CAMPOS:
-            campo_numero("geral", campo, rotulo)
-    for col, sec in zip(cols[1:], SECRETARIAS):
+    for col, (campo, rotulo, ajuda) in zip(cols, CAMPOS):
         with col:
-            st.markdown(f'<div class="legenda">{sec}</div>', unsafe_allow_html=True)
-            for campo, rotulo, _ in CAMPOS:
-                campo_numero(sec, campo, rotulo)
-            st.checkbox("Regra específica", key=chave(sec, "bln"),
-                        help=f"bln_{sec.lower()}: marcado = regra específica; desmarcado = regra geral")
-    st.checkbox("Somente contratos em execução (bln_execucao)", key="p_bln_execucao",
-                help="Afeta a linha 'Nec orçamentária final (bln_execucao)'.")
-    st.button("Restaurar parâmetros da planilha",
-              on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
+            campo_numero("geral", campo, rotulo, ajuda)
+    opcoes = st.columns([3, 2])
+    opcoes[0].toggle("Somente contratos em execução (bln_execucao)", key="p_bln_execucao",
+                     help="Afeta a linha 'Nec orçamentária final (bln_execucao)'.")
+    opcoes[1].button("Restaurar parâmetros da planilha", width="stretch",
+                     on_click=carregar_parametros_no_estado, args=(copy.deepcopy(entrada.parametros),))
+
+st.markdown('<div class="legenda" style="margin-top:1rem">Regras específicas por secretaria</div>',
+            unsafe_allow_html=True)
+cols = st.columns(4)
+for col, sec in zip(cols, SECRETARIAS):
+    with col, st.container(border=True, key=f"card_{sec}"):
+        st.markdown(f'<div class="sec-titulo">{sec}</div>', unsafe_allow_html=True)
+        ligada = st.toggle("Aplicar regra específica", key=chave(sec, "bln"),
+                           help=f"bln_{sec.lower()}: ligado = regra da secretaria; desligado = regra geral")
+        for campo, rotulo, ajuda in CAMPOS:
+            campo_numero(sec, campo, rotulo, ajuda, desabilitado=not ligada)
 
 parametros = parametros_do_estado()
 linhas = calcular(entrada, parametros)
