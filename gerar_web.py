@@ -62,7 +62,7 @@ def proteger(dados: dict, usuarios) -> dict:
             continue
         sal, iv_u = os.urandom(16), os.urandom(12)
         kek = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=sal, iterations=ITERACOES).derive(u.senha.encode())
-        conteudo = json.dumps({"k": _b64(chave), "nome": u.nome}, ensure_ascii=False).encode()
+        conteudo = json.dumps({"k": _b64(chave), "nome": u.nome, "perfil": u.perfil}, ensure_ascii=False).encode()
         protegido["chaves"][hashlib.sha256(u.usuario.encode()).hexdigest()] = {
             "salt": _b64(sal), "iv": _b64(iv_u), "ct": _b64(AESGCM(kek).encrypt(iv_u, conteudo, None))}
     if not protegido["chaves"]:

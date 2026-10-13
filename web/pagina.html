@@ -48,9 +48,10 @@ body { min-height: 100vh;
   .app { grid-template-columns: minmax(0, 1fr); }
   .menu { position: static; height: auto; flex-direction: row; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
   .menu br { display: none; }
+  .menu { flex-wrap: wrap; } .menu .menu-titulo { display: none; }
 }
 .pagina { max-width: 1760px; margin: 0 auto; padding-inline: clamp(16px, 2.5vw, 40px); padding-block: .6rem 2rem;
-          display: grid; gap: .9rem; }
+          display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; }
 
 /* cabeçalho */
 .topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem 1.5rem; }
@@ -115,6 +116,21 @@ h2::before { content: ""; width: 4px; height: 1.3em; border-radius: 2px; backgro
 .exportar { margin-top: .9rem; }
 .exportar .btn { font-size: .95rem; padding: .55rem 1.1rem; border-color: var(--accent); color: var(--accent); }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
+.exportar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.2rem; }
+.exportar select { font: inherit; font-size: .9rem; padding: .45rem .5rem; border-radius: 7px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); }
+.exp-devol { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+
+/* módulo Devolutiva (só admin): previsão do modelo x posição da área técnica */
+.devol-carga { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
+.devol-carga .btn.principal { font-size: .95rem; padding: .55rem 1.1rem; background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.devol-carga .btn.principal:hover { color: var(--on-primary); filter: brightness(1.08); }
+#devol-resultado { display: grid; gap: .45rem; min-width: 0; }
+#devol-erros { color: var(--bad); font-size: .85rem; margin: 0; }
+#devol-erros:empty { display: none; }
+#tab-devol-acao tr.grupo td { font-weight: 700; color: var(--title); background: var(--total-bg); }
+td.mais { color: var(--bad); font-weight: 600; } td.menos { color: var(--good); font-weight: 600; }
+#tab-devol-contratos td.obs { white-space: normal; min-width: 16rem; color: var(--muted); }
+#tab-devol-contratos a { color: var(--accent); }
 
 /* módulo Geral / Ação: regras por ação em tabelas compactas, lado a lado */
 .blocos.modo-acao { grid-template-columns: minmax(17rem, 1.2fr) 4fr; }
@@ -198,6 +214,8 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
   <div class="menu-titulo">Modelo</div>
   <button type="button" data-modo="secretaria">Geral /<br>Secretaria</button>
   <button type="button" data-modo="acao">Geral /<br>Ação</button>
+  <div class="menu-titulo so-admin" hidden>Análise</div>
+  <button type="button" data-modo="devolutiva" class="so-admin" hidden>Devolutiva</button>
 </nav>
 <div class="pagina">
   <header class="topo">
@@ -214,13 +232,13 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
     </div>
   </header>
 
-  <section class="secao" aria-labelledby="t-param">
+  <section class="secao" id="sec-param" aria-labelledby="t-param">
     <h2 id="t-param">Parâmetros</h2>
     <div class="legendas"><div class="legenda">Regra geral</div><div class="legenda" id="legenda-especificas">Regras específicas por secretaria</div></div>
     <div class="blocos" id="blocos"></div>
   </section>
 
-  <section class="secao" aria-labelledby="t-resumo">
+  <section class="secao" id="sec-resumo" aria-labelledby="t-resumo">
     <h2 id="t-resumo">Resumo</h2>
     <div class="resumo-modo" id="resumo-sec">
       <div class="cabeca-tabela"><div class="legenda">Por secretaria (valores em milhões)</div>
@@ -233,8 +251,35 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
       <div class="tabela-box"><table id="tab-acao"></table></div>
       <div class="metricas" id="metricas"></div>
     </div>
-    <div class="exportar"><button type="button" class="btn" id="exportar">Gerar arquivo Excel com os resultados</button></div>
+    <div class="exportar"><button type="button" class="btn" id="exportar">Gerar arquivo Excel com os resultados</button>
+      <div class="exp-devol so-admin" hidden>
+        <select id="devol-sec" aria-label="Secretaria da planilha para devolutiva"></select>
+        <button type="button" class="btn" id="exportar-devol">Gerar planilha para devolutiva</button>
+      </div>
+    </div>
     <p class="rodape">Os cálculos reproduzem as fórmulas da planilha do modelo preditivo. "Copiar tabela" copia os valores para colar no Excel. O arquivo Excel traz os resumos, os parâmetros usados e o detalhe de todos os contratos.</p>
+  </section>
+
+  <section class="secao" id="sec-devolutiva" aria-labelledby="t-devol" hidden>
+    <h2 id="t-devol">Devolutiva da área técnica</h2>
+    <div class="devol-carga">
+      <button type="button" class="btn principal" id="devol-escolher">Selecionar planilhas recebidas</button>
+      <input type="file" id="devol-arquivos" accept=".xlsx" multiple hidden>
+      <button type="button" class="btn" id="devol-limpar" hidden>Limpar</button>
+      <span class="base" id="devol-status">Nenhuma planilha carregada. Selecione uma ou mais planilhas devolvidas pelas secretarias.</span>
+    </div>
+    <p id="devol-erros" role="alert"></p>
+    <div id="devol-resultado" hidden>
+      <div class="metricas" id="devol-metricas"></div>
+      <div class="cabeca-tabela"><div class="legenda">Por secretaria (valores em milhões)</div></div>
+      <div class="tabela-box"><table id="tab-devol-sec"></table></div>
+      <div class="cabeca-tabela"><div class="legenda">Por ação orçamentária (valores em milhões)</div></div>
+      <div class="tabela-box"><table id="tab-devol-acao"></table></div>
+      <div class="cabeca-tabela"><div class="legenda" id="legenda-devol-contratos">Contratos ajustados ou com observação (valores em R$)</div></div>
+      <div class="tabela-box"><table id="tab-devol-contratos"></table></div>
+      <div class="exportar"><button type="button" class="btn" id="exportar-consolidado">Gerar Excel consolidado</button></div>
+    </div>
+    <p class="rodape">As planilhas são lidas só neste navegador: nada é enviado para a internet. "Após devolutiva" usa o valor informado pela área técnica; quando a célula fica em branco, vale a previsão do modelo.</p>
   </section>
 </div>
 </div>
@@ -246,7 +291,7 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
 var PROTEGIDO = /*DADOS*/;
 try { var temaSalvo = localStorage.getItem("necorc-tema"); if (temaSalvo) document.documentElement.dataset.theme = temaSalvo; } catch (e) {}
 
-function iniciarApp(D, nomeUsuario) {
+function iniciarApp(D, nomeUsuario, perfil) {
   "use strict";
   var SECS = D.secretarias;
   var CAMPOS = [  // ordem na tela: os 3 principais primeiro; Simplif. por último (só na regra geral, como no Excel: coluna BS)
@@ -278,8 +323,10 @@ function iniciarApp(D, nomeUsuario) {
 
   // estado: valores digitados (em % para os percentuais) e o valor usado nas contas
   var estado, CODS = D.acoes.map(function (a) { return a.codigo; });
-  var modo = "secretaria";
+  var modo = "secretaria", ADMIN = perfil === "admin", devolAtiva = false;  // devolAtiva: tela do módulo Devolutiva
   try { modo = sessionStorage.getItem("necorc-modo") === "acao" ? "acao" : "secretaria"; } catch (e) {}
+  try { devolAtiva = ADMIN && sessionStorage.getItem("necorc-tela") === "devolutiva"; } catch (e) {}
+  document.querySelectorAll(".so-admin").forEach(function (el) { el.hidden = !ADMIN; });
   function estadoInicial() {
     var p = D.parametros, e = { regras: {}, bln: {}, blnAcao: {}, blnExec: p.bln_execucao };
     CODS.forEach(function (cod) {  // a planilha não tem regra por ação: começa com a regra geral, desligada
@@ -368,10 +415,19 @@ function iniciarApp(D, nomeUsuario) {
   function marcarModo() {  // cada módulo mostra o seu resumo; o arquivo Excel continua com os dois
     document.getElementById("resumo-sec").hidden = modo !== "secretaria";
     document.getElementById("resumo-acao").hidden = modo !== "acao";
-    document.querySelectorAll(".menu button[data-modo]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.modo === modo)); });
+    document.getElementById("sec-param").hidden = devolAtiva;
+    document.getElementById("sec-resumo").hidden = devolAtiva;
+    document.getElementById("sec-devolutiva").hidden = !devolAtiva;
+    document.querySelectorAll(".menu button[data-modo]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(devolAtiva ? b.dataset.modo === "devolutiva" : b.dataset.modo === modo));
+    });
   }
   document.querySelectorAll(".menu button[data-modo]").forEach(function (b) {
     b.addEventListener("click", function () {
+      var devol = b.dataset.modo === "devolutiva";
+      try { sessionStorage.setItem("necorc-tela", devol ? "devolutiva" : "modelo"); } catch (e) {}
+      if (devol || (devolAtiva && modo === b.dataset.modo)) { devolAtiva = devol; marcarModo(); return; }  // só troca de tela
+      devolAtiva = false;
       if (modo === b.dataset.modo) return;
       modo = b.dataset.modo;
       try { sessionStorage.setItem("necorc-modo", modo); } catch (e) {}
@@ -480,6 +536,20 @@ function iniciarApp(D, nomeUsuario) {
     var m = iso.match(/^(\d+)-(\d+)-(\d+)(?:T(\d+):(\d+):(\d+))?/);
     return (Date.UTC(+m[1], m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) - Date.UTC(1899, 11, 30)) / 86400000;
   }
+  function abaParametros(p) {  // aba "parâmetros usados": a mesma no Excel de resultados e na planilha de devolutiva
+    var aba3 = [["regra", "parâmetro", "valor"], ["geral", "modelo", p.modo === "acao" ? "Geral / Ação" : "Geral / Secretaria"]];
+    PARAM_ORDEM.forEach(function (k) { aba3.push(["geral", k, p.geral[k]]); });
+    if (p.modo === "acao") CODS.forEach(function (c) {
+      PARAM_ORDEM.forEach(function (k) { aba3.push([c, k, p.acao[c][k]]); });
+      aba3.push([c, "bln_acao", p.bln_acao[c]]);
+    });
+    else SECS.forEach(function (s) {
+      PARAM_ORDEM.forEach(function (k) { aba3.push([s, k, p.secretaria[s][k]]); });
+      aba3.push([s, "bln_secretaria", p.bln_secretaria[s]]);
+    });
+    aba3.push(["geral", "bln_execucao", p.bln_execucao]);
+    return aba3;
+  }
   function gerarExcel() {
     var p = parametros(), r = Motor.calcular(D, p);
     var sec = Motor.resumoSecretarias(D, r, p), ac = Motor.resumoAcoes(D, r);
@@ -495,18 +565,7 @@ function iniciarApp(D, nomeUsuario) {
               ["Faltando", ac.faltando], ["Sobrando", ac.sobrando]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aba2), "resumo ações");
 
-    var aba3 = [["regra", "parâmetro", "valor"], ["geral", "modelo", p.modo === "acao" ? "Geral / Ação" : "Geral / Secretaria"]];
-    PARAM_ORDEM.forEach(function (k) { aba3.push(["geral", k, p.geral[k]]); });
-    if (p.modo === "acao") CODS.forEach(function (c) {
-      PARAM_ORDEM.forEach(function (k) { aba3.push([c, k, p.acao[c][k]]); });
-      aba3.push([c, "bln_acao", p.bln_acao[c]]);
-    });
-    else SECS.forEach(function (s) {
-      PARAM_ORDEM.forEach(function (k) { aba3.push([s, k, p.secretaria[s][k]]); });
-      aba3.push([s, "bln_secretaria", p.bln_secretaria[s]]);
-    });
-    aba3.push(["geral", "bln_execucao", p.bln_execucao]);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aba3), "parâmetros usados");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(abaParametros(p)), "parâmetros usados");
 
     var det = Motor.detalhe(D, p), n = D.contratos, aba4 = [det.colunas], datas = [];
     det.colunas.forEach(function (nome, j) { if (det.datas.indexOf(nome) >= 0) datas.push(j); });
@@ -527,22 +586,24 @@ function iniciarApp(D, nomeUsuario) {
     var d = new Date(), z = function (x) { return String(x).padStart(2, "0"); };
     return "necorc_resultado_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + "_" + z(d.getHours()) + z(d.getMinutes()) + ".xlsx";
   }
+  async function salvarArquivo(bytes, nome) {
+    var downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (downloads) {
+      try { await downloads.save({ filename: nome, data: new Blob([bytes]) }); avisar("Arquivo Excel gerado."); }
+      catch (e) { if (e && e.code !== "declined") avisar("Não foi possível salvar o arquivo (" + (e.code || "erro") + ")."); }
+    } else {  // fora do Claude (arquivo aberto direto no navegador)
+      var url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      var a = document.createElement("a"); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    }
+  }
   var botaoExportar = document.getElementById("exportar");
   botaoExportar.addEventListener("click", async function () {
     var rotulo = botaoExportar.textContent;
     botaoExportar.disabled = true; botaoExportar.textContent = "Gerando arquivo...";
     try {
       await new Promise(function (ok) { setTimeout(ok, 30); });  // deixa o texto do botão aparecer
-      var bytes = gerarExcel(), nome = nomeArquivo();
-      var downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
-      if (downloads) {
-        try { await downloads.save({ filename: nome, data: new Blob([bytes]) }); avisar("Arquivo Excel gerado."); }
-        catch (e) { if (e && e.code !== "declined") avisar("Não foi possível salvar o arquivo (" + (e.code || "erro") + ")."); }
-      } else {  // fora do Claude (arquivo aberto direto no navegador)
-        var url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-        var a = document.createElement("a"); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-      }
+      await salvarArquivo(gerarExcel(), nomeArquivo());
     } catch (e) {
       avisar("Não foi possível gerar o arquivo Excel.");
       if (window.console) console.error(e);
@@ -551,6 +612,230 @@ function iniciarApp(D, nomeUsuario) {
     }
   });
 
+  // ---------- devolutiva da área técnica (só admin) ----------
+  // 1) "Gerar planilha para devolutiva": uma planilha por secretaria, com a previsão do modelo e 2 colunas em branco
+  //    (devolutiva da necessidade, em R$, e observacao) para a área técnica preencher.
+  // 2) Módulo Devolutiva: lê as planilhas devolvidas (só no navegador), junta pelo cod_tci e compara previsão x devolutiva.
+  var COLS_DEVOL = ["cod_tci", "cod_operacao", "num_convenio", "fase_pac", "secretaria", "objeto", "ano_assinatura",
+    "dsc_situacao_contrato_mcid", "dsc_situacao_objeto_mcid", "txt_uf", "txt_municipio", "vlr_repasse", "vlr_empenhado aj",
+    "mes_referencia", "txt_link", "ação ajustada", "exec mensal R$ referencia", "média utilizada", "media mensal %", "bln exec",
+    "a empenhar atual", "vlr_saldo_conta", "disponível RAP", "vlr disponível", "critério inicial aplicado",
+    "necessidade orçamento inicial", "Nec. Financeira CAIXA", "vlr disponível pós NecFin CAIXA",
+    "necessidade orçamento pós NecFin", "simplificado final", "necessidade orçamento final"];
+  var COL_DEVOL = "devolutiva da necessidade", COL_OBS = "observacao", ABA_DEVOL = "previsao resumida";
+  var COLS_REAIS = ["vlr_repasse", "vlr_empenhado aj", "exec mensal R$ referencia", "a empenhar atual", "vlr_saldo_conta",
+    "disponível RAP", "vlr disponível", "necessidade orçamento inicial", "Nec. Financeira CAIXA",
+    "vlr disponível pós NecFin CAIXA", "necessidade orçamento pós NecFin", "simplificado final", "necessidade orçamento final"];
+
+  function esc(t) {
+    return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+  }
+  var selDevol = document.getElementById("devol-sec");
+  selDevol.innerHTML = SECS.map(function (s) { return '<option value="' + esc(s) + '">' + esc(s) + "</option>"; }).join("") +
+                       '<option value="*">Todas (um arquivo por secretaria)</option>';
+
+  function gerarPlanilhaDevolutiva(p, det, sec) {
+    var ind = COLS_DEVOL.map(function (c) { return det.colunas.indexOf(c); });
+    var iSec = det.colunas.indexOf("secretaria"), aoa = [COLS_DEVOL.concat([COL_DEVOL, COL_OBS])];
+    for (var i = 0; i < D.contratos; i++) {
+      if (det.valores[iSec][i] !== sec) continue;
+      aoa.push(ind.map(function (j) { return j < 0 ? null : det.valores[j][i]; }).concat([null, null]));
+    }
+    var ws = XLSX.utils.aoa_to_sheet(aoa), n = aoa.length - 1;
+    ws["!cols"] = aoa[0].map(function (c) { return { wch: c === "objeto" ? 50 : c === COL_OBS ? 50 : c === COL_DEVOL ? 24 : Math.max(10, Math.min(28, c.length + 2)) }; });
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: n, c: aoa[0].length - 1 } }) };
+    COLS_REAIS.concat([COL_DEVOL]).forEach(function (nome) {
+      var j = aoa[0].indexOf(nome);
+      for (var r = 1; r <= n; r++) { var cel = ws[XLSX.utils.encode_cell({ r: r, c: j })]; if (cel && cel.t === "n") cel.z = "#,##0.00"; }
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(abaParametros(p)), "parâmetros usados");
+    XLSX.utils.book_append_sheet(wb, ws, ABA_DEVOL);
+    return { bytes: new Uint8Array(XLSX.write(wb, { type: "array", bookType: "xlsx", compression: true })), contratos: n };
+  }
+  var botaoDevol = document.getElementById("exportar-devol");
+  botaoDevol.addEventListener("click", async function () {
+    var rotulo = botaoDevol.textContent, escolha = selDevol.value;
+    botaoDevol.disabled = true; botaoDevol.textContent = "Gerando...";
+    try {
+      await new Promise(function (ok) { setTimeout(ok, 30); });
+      var p = parametros(), det = Motor.detalhe(D, p);
+      var secs = escolha === "*" ? SECS : [escolha];
+      for (var k = 0; k < secs.length; k++) {
+        var g = gerarPlanilhaDevolutiva(p, det, secs[k]);
+        await salvarArquivo(g.bytes, "resultado NecOrc - previsao modelo - " + secs[k] + ".xlsx");
+        if (k < secs.length - 1) await new Promise(function (ok) { setTimeout(ok, 600); });  // o navegador baixa um de cada vez
+      }
+    } catch (e) {
+      avisar("Não foi possível gerar a planilha.");
+      if (window.console) console.error(e);
+    } finally {
+      botaoDevol.disabled = false; botaoDevol.textContent = rotulo;
+    }
+  });
+
+  // --- leitura das planilhas devolvidas ---
+  var devol = { arquivos: [], contratos: {} };  // contratos: cod_tci -> linha
+  try { var salvoDevol = JSON.parse(sessionStorage.getItem("necorc-devolutiva") || "null"); if (salvoDevol) devol = salvoDevol; } catch (e) {}
+  function valorReais(v) {  // número da célula; aceita texto como "1.200.000,00" ou "R$ 1,2"; null = em branco; NaN = inválido
+    if (v === null || v === undefined || v === "") return null;
+    if (typeof v === "number") return v;
+    var t = String(v).replace(/R\$|\s/g, "");
+    if (t === "") return null;
+    if (t.indexOf(",") >= 0) t = t.replace(/\./g, "").replace(",", ".");
+    return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+  }
+  function lerPlanilhaDevolutiva(buf, nome) {
+    var wb = XLSX.read(buf, { type: "array" });
+    var aba = wb.SheetNames.indexOf(ABA_DEVOL) >= 0 ? ABA_DEVOL : wb.SheetNames.filter(function (n) { return /previs/i.test(n); })[0];
+    if (!aba) throw new Error('"' + nome + '": não tem a aba "' + ABA_DEVOL + '".');
+    var linhas = XLSX.utils.sheet_to_json(wb.Sheets[aba], { header: 1, raw: true, defval: null });
+    var cab = (linhas[0] || []).map(function (h) { return String(h == null ? "" : h).trim().toLowerCase(); });
+    var col = function (n) { return cab.indexOf(n.toLowerCase()); };
+    var faltam = ["cod_tci", "secretaria", "necessidade orçamento final", COL_DEVOL, COL_OBS].filter(function (n) { return col(n) < 0; });
+    if (faltam.length) throw new Error('"' + nome + '": faltam as colunas ' + faltam.join(", ") + ".");
+    var c = { cod: col("cod_tci"), sec: col("secretaria"), acao: col("ação ajustada"), objeto: col("objeto"), uf: col("txt_uf"),
+              mun: col("txt_municipio"), link: col("txt_link"), prev: col("necessidade orçamento final"), dev: col(COL_DEVOL), obs: col(COL_OBS) };
+    var lidos = [], invalidos = [];
+    linhas.slice(1).forEach(function (l, k) {
+      if (l[c.cod] == null || l[c.cod] === "") return;
+      var dv = valorReais(l[c.dev]);
+      if (Number.isNaN(dv)) { invalidos.push(String(l[c.cod]) + " (linha " + (k + 2) + ")"); dv = null; }
+      var pick = function (j) { return j < 0 || l[j] == null ? "" : String(l[j]); };
+      lidos.push({ cod: String(l[c.cod]), sec: pick(c.sec), acao: pick(c.acao), objeto: pick(c.objeto), uf: pick(c.uf), mun: pick(c.mun),
+                   link: pick(c.link), prev: Number(l[c.prev]) || 0, dev: dv, obs: pick(c.obs).trim(), arquivo: nome });
+    });
+    return { linhas: lidos, invalidos: invalidos };
+  }
+  var entradaDevol = document.getElementById("devol-arquivos");
+  document.getElementById("devol-escolher").addEventListener("click", function () { entradaDevol.click(); });
+  entradaDevol.addEventListener("change", async function () {
+    var erros = [], repetidos = 0;
+    for (var f = 0; f < entradaDevol.files.length; f++) {
+      var arq = entradaDevol.files[f];
+      try {
+        var r = lerPlanilhaDevolutiva(new Uint8Array(await arq.arrayBuffer()), arq.name);
+        devol.arquivos = devol.arquivos.filter(function (a) { return a.nome !== arq.name; });  // mesmo arquivo de novo: substitui
+        Object.keys(devol.contratos).forEach(function (k) { if (devol.contratos[k].arquivo === arq.name) delete devol.contratos[k]; });
+        r.linhas.forEach(function (l) { if (devol.contratos[l.cod]) repetidos++; devol.contratos[l.cod] = l; });
+        var secs = {}; r.linhas.forEach(function (l) { secs[l.sec] = true; });
+        devol.arquivos.push({ nome: arq.name, secretarias: Object.keys(secs).join(", "), contratos: r.linhas.length });
+        if (r.invalidos.length) erros.push('"' + arq.name + '": ' + r.invalidos.length + " valor(es) de devolutiva que não são número, tratados como em branco: " +
+                                            r.invalidos.slice(0, 5).join("; ") + (r.invalidos.length > 5 ? "; ..." : "") + ".");
+      } catch (e) { erros.push(e && e.message && e.message.charAt(0) === '"' ? e.message : '"' + arq.name + '": não foi possível ler a planilha.'); }
+    }
+    if (repetidos) erros.push(repetidos + " contrato(s) apareceram em mais de uma planilha; valeu a última carregada.");
+    entradaDevol.value = "";
+    document.getElementById("devol-erros").textContent = erros.join(" ");
+    guardarDevol(); mostrarDevolutiva();
+  });
+  document.getElementById("devol-limpar").addEventListener("click", function () {
+    devol = { arquivos: [], contratos: {} };
+    document.getElementById("devol-erros").textContent = "";
+    guardarDevol(); mostrarDevolutiva();
+  });
+  function guardarDevol() { try { sessionStorage.setItem("necorc-devolutiva", JSON.stringify(devol)); } catch (e) {} }
+
+  // --- comparação ---
+  function linhasDevol() {
+    return Object.keys(devol.contratos).map(function (k) {
+      var l = devol.contratos[k], fim = l.dev === null ? l.prev : l.dev;
+      return Object.assign({}, l, { fim: fim, dif: fim - l.prev, respondido: l.dev !== null || l.obs !== "",
+                                    ajustado: l.dev !== null && Math.abs(l.dev - l.prev) >= 0.005 });
+    });
+  }
+  function somar(lista) {
+    var t = { n: 0, resp: 0, aj: 0, prev: 0, fim: 0, dif: 0 };
+    lista.forEach(function (l) { t.n++; if (l.respondido) t.resp++; if (l.ajustado) t.aj++; t.prev += l.prev; t.fim += l.fim; t.dif += l.dif; });
+    return t;
+  }
+  function tdDif(v) {  // diferença: a mais em vermelho (pede mais orçamento), a menos em verde
+    var m = Math.abs(v) >= 0.005;
+    return '<td class="num' + (m && v > 0 ? " mais" : m && v < 0 ? " menos" : "") + '">' + (m && v > 0 ? "+" : "") + fmt(m ? v : 0, 2) + "</td>";
+  }
+  var MI = 1e6;
+  function resumoDevol(L) {
+    var porSec = {}, ordemSec = SECS.slice();
+    L.forEach(function (l) { (porSec[l.sec] = porSec[l.sec] || []).push(l); if (ordemSec.indexOf(l.sec) < 0) ordemSec.push(l.sec); });
+    var secs = ordemSec.filter(function (s) { return porSec[s]; }).map(function (s) { return { sec: s, t: somar(porSec[s]) }; });
+    var info = {}; D.acoes.forEach(function (a) { info[a.codigo] = a; });
+    var porAcao = {};
+    L.forEach(function (l) { (porAcao[l.acao] = porAcao[l.acao] || []).push(l); });
+    var gruposAcao = [];
+    ordemSec.forEach(function (s) {
+      var itens = Object.keys(porAcao).filter(function (a) { return ((info[a] && info[a].secretaria) || porAcao[a][0].sec) === s; })
+        .sort(function (x, y) { return (CODS.indexOf(x) < 0 ? 99 : CODS.indexOf(x)) - (CODS.indexOf(y) < 0 ? 99 : CODS.indexOf(y)); })
+        .map(function (a) { return { cod: a, desc: info[a] ? info[a].descricao : "", t: somar(porAcao[a]) }; });
+      if (itens.length) gruposAcao.push({ sec: s, itens: itens, t: somar([].concat.apply([], itens.map(function (i) { return porAcao[i.cod]; }))) });
+    });
+    return { secs: secs, gruposAcao: gruposAcao, total: somar(L) };
+  }
+  function mostrarDevolutiva() {
+    var L = linhasDevol(), tem = L.length > 0;
+    document.getElementById("devol-resultado").hidden = !tem;
+    document.getElementById("devol-limpar").hidden = !tem;
+    document.getElementById("devol-status").innerHTML = tem
+      ? devol.arquivos.map(function (a) { return "<b>" + esc(a.nome) + "</b> (" + esc(a.secretarias) + ", " + a.contratos.toLocaleString("pt-BR") + " contratos)"; }).join(" · ")
+      : "Nenhuma planilha carregada. Selecione uma ou mais planilhas devolvidas pelas secretarias.";
+    if (!tem) return;
+    var R = resumoDevol(L), T = R.total;
+    document.getElementById("devol-metricas").innerHTML =
+      '<div class="metrica"><span>Previsão do modelo</span><strong>' + fmt(T.prev / MI, 2) + "</strong></div>" +
+      '<div class="metrica"><span>Após devolutiva</span><strong>' + fmt(T.fim / MI, 2) + "</strong></div>" +
+      '<div class="metrica ' + (T.dif > 0 ? "falta" : "sobra") + '"><span>Diferença</span><strong>' + (T.dif > 0 ? "+" : "") + fmt(T.dif / MI, 2) + "</strong></div>" +
+      '<div class="metrica"><span>Respondidos / ajustados</span><strong>' + T.resp.toLocaleString("pt-BR") + " / " + T.aj.toLocaleString("pt-BR") + "</strong></div>";
+
+    var cab = '<th class="num">Contratos</th><th class="num">Respondidos</th><th class="num">Ajustados</th><th class="num">Previsão do modelo</th><th class="num">Após devolutiva</th><th class="num">Diferença</th>';
+    var cels = function (t) {
+      return '<td class="num">' + t.n.toLocaleString("pt-BR") + '</td><td class="num">' + t.resp.toLocaleString("pt-BR") + '</td><td class="num">' + t.aj.toLocaleString("pt-BR") +
+             '</td><td class="num">' + fmt(t.prev / MI, 2) + '</td><td class="num">' + fmt(t.fim / MI, 2) + "</td>" + tdDif(t.dif / MI);
+    };
+    var h = "<thead><tr><th>Secretaria</th>" + cab + "</tr></thead><tbody>";
+    R.secs.forEach(function (s) { h += "<tr><td>" + esc(s.sec) + "</td>" + cels(s.t) + "</tr>"; });
+    h += '<tr class="total"><td>MCID</td>' + cels(T) + "</tr>";
+    document.getElementById("tab-devol-sec").innerHTML = h + "</tbody>";
+
+    h = "<thead><tr><th>Descrição ação</th><th>Cód. ação</th>" + cab + "</tr></thead><tbody>";
+    R.gruposAcao.forEach(function (g) {
+      h += '<tr class="grupo"><td colspan="2">' + esc(g.sec) + "</td>" + cels(g.t) + "</tr>";
+      g.itens.forEach(function (a) { h += "<tr><td>" + esc(a.desc) + "</td><td>" + esc(a.cod) + "</td>" + cels(a.t) + "</tr>"; });
+    });
+    document.getElementById("tab-devol-acao").innerHTML = h + "</tbody>";
+
+    var lista = L.filter(function (l) { return l.ajustado || l.obs; }).sort(function (a, b) { return Math.abs(b.dif) - Math.abs(a.dif); });
+    document.getElementById("legenda-devol-contratos").textContent = "Contratos ajustados ou com observação: " + lista.length.toLocaleString("pt-BR") + " (valores em R$)";
+    h = '<thead><tr><th>Contrato</th><th>Secretaria</th><th>Ação</th><th>Município/UF</th><th class="num">Previsão do modelo</th><th class="num">Devolutiva</th><th class="num">Diferença</th><th>Observação</th></tr></thead><tbody>';
+    lista.forEach(function (l) {
+      var cod = /^https:\/\//.test(l.link) ? '<a href="' + esc(l.link) + '" target="_blank" rel="noopener">' + esc(l.cod) + "</a>" : esc(l.cod);
+      h += '<tr><td title="' + esc(l.objeto) + '">' + cod + "</td><td>" + esc(l.sec) + "</td><td>" + esc(l.acao) + "</td><td>" + esc(l.mun) + (l.uf ? "/" + esc(l.uf) : "") +
+           '</td><td class="num">' + fmt(l.prev, 2) + '</td><td class="num">' + (l.dev === null ? "" : fmt(l.dev, 2)) + "</td>" + tdDif(l.dif) +
+           '<td class="obs">' + esc(l.obs) + "</td></tr>";
+    });
+    document.getElementById("tab-devol-contratos").innerHTML = h + "</tbody>";
+  }
+  var botaoConsol = document.getElementById("exportar-consolidado");
+  botaoConsol.addEventListener("click", async function () {
+    try {
+      var L = linhasDevol(), R = resumoDevol(L), wb = XLSX.utils.book_new();
+      var cab = ["contratos", "respondidos", "ajustados", "previsão do modelo", "após devolutiva", "diferença"];
+      var linha = function (t) { return [t.n, t.resp, t.aj, t.prev, t.fim, t.dif]; };
+      var a1 = [["secretaria"].concat(cab)];
+      R.secs.forEach(function (s) { a1.push([s.sec].concat(linha(s.t))); });
+      a1.push(["MCID"].concat(linha(R.total)));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(a1), "por secretaria");
+      var a2 = [["secretaria", "descrição ação", "cod ação"].concat(cab)];
+      R.gruposAcao.forEach(function (g) { g.itens.forEach(function (a) { a2.push([g.sec, a.desc, a.cod].concat(linha(a.t))); }); });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(a2), "por ação");
+      var a3 = [["cod_tci", "secretaria", "ação ajustada", "objeto", "txt_municipio", "txt_uf", "previsão do modelo", "devolutiva da necessidade",
+                 "após devolutiva", "diferença", "observacao", "respondido", "ajustado", "arquivo", "txt_link"]];
+      L.forEach(function (l) { a3.push([l.cod, l.sec, l.acao, l.objeto, l.mun, l.uf, l.prev, l.dev, l.fim, l.dif, l.obs, l.respondido ? "sim" : "não", l.ajustado ? "sim" : "não", l.arquivo, l.link]); });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(a3), "contratos");
+      var d = new Date(), z = function (x) { return String(x).padStart(2, "0"); };
+      await salvarArquivo(new Uint8Array(XLSX.write(wb, { type: "array", bookType: "xlsx", compression: true })),
+                          "necorc_devolutiva_consolidada_" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + ".xlsx");
+    } catch (e) { avisar("Não foi possível gerar o arquivo Excel."); if (window.console) console.error(e); }
+  });
+  if (ADMIN) mostrarDevolutiva();
   function temaAtual() {
     var t = document.documentElement.dataset.theme;
     if (t) return t;
@@ -604,13 +889,13 @@ function iniciarApp(D, nomeUsuario) {
     var kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(e.salt), iterations: PROTEGIDO.iter, hash: "SHA-256" },
                                             base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
     var conteudo = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(e.iv) }, kek, b64(e.ct));  // senha errada falha aqui
-    return JSON.parse(new TextDecoder().decode(conteudo));  // { k: chave dos dados, nome }
+    return JSON.parse(new TextDecoder().decode(conteudo));  // { k: chave dos dados, nome, perfil }
   }
   async function mostrar(acesso) {
     var D = await abrirDados(b64(acesso.k));
     document.getElementById("entrada").hidden = true;
     document.getElementById("pagina").hidden = false;
-    iniciarApp(D, acesso.nome);
+    iniciarApp(D, acesso.nome, acesso.perfil);
   }
 
   var form = document.getElementById("form-entrada"), erro = document.getElementById("login-erro"), botao = document.getElementById("login-entrar");

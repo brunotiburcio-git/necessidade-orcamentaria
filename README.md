@@ -124,3 +124,11 @@ A página tem só os dados cifrados; as planilhas da pasta `dados` nunca vão pa
 - **Geral / Ação**: mesma conta, mas a regra específica é escolhida pela ação ajustada do contrato
   (coluna "ação ajustada"). Esse módulo não existe na planilha: cada ação começa com a regra geral e
   desligada. No Python é `Parametros.modo = "acao"` (`regra_especifica` em `necorc/modelo.py`).
+- **Devolutiva** (só perfil admin): análise da área técnica sobre a previsão do modelo.
+  1. No módulo do modelo, "Gerar planilha para devolutiva" cria uma planilha por secretaria
+     (`resultado NecOrc - previsao modelo - <SECRETARIA>.xlsx`), com os parâmetros usados e as colunas do
+     resumo da previsão, mais duas colunas em branco: `devolutiva da necessidade` (valor em R$) e `observacao`.
+  2. A área técnica preenche e devolve. Célula de devolutiva em branco = mantém a previsão do modelo.
+  3. No módulo Devolutiva, o admin seleciona as planilhas recebidas; a página junta tudo pelo `cod_tci`
+     e mostra previsão × após devolutiva por secretaria, por ação e por contrato, e gera um Excel consolidado.
+     As planilhas são lidas só no navegador (nada é enviado) e ficam guardadas até fechar a aba.
