@@ -10,24 +10,24 @@
   --text: #0a0a0a; --muted: #737373; --title: #171717;
   --primary: #c71f37; --on-primary: #ffffff; --accent: #c71f37; --accent-2: #7a9bb8;
   --accent-soft: rgba(199, 31, 55, .07); --glow: rgba(199, 31, 55, .14);
-  --total-bg: #f4f0ed; --bad: #dc2626; --good: #15803d;
+  --total-bg: #f4f0ed; --bad: #c71f37; --good: #15803d;
   --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   --mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
   --radius: 8px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #060606; --surface: #171717; --surface-2: #242424; --line: #292929; --line-strong: #3a3a3a;
+  --bg: #201e1e; --surface: #1b1919; --surface-2: #262323; --line: #312d2d; --line-strong: #433e3e;
   --text: #fafafa; --muted: #a3a3a3; --title: #ffffff;
-  --primary: #c71f37; --on-primary: #ffffff; --accent: #ff4d6a; --accent-2: #6ba3c9;
-  --accent-soft: rgba(255, 77, 106, .11); --glow: rgba(255, 77, 106, .2);
-  --total-bg: rgba(255, 255, 255, .07); --bad: #f87171; --good: #4ade80; color-scheme: dark;
+  --primary: #c71f37; --on-primary: #ffffff; --accent: #d1495b; --accent-2: #6ba3c9;
+  --accent-soft: rgba(209, 73, 91, .12); --glow: rgba(209, 73, 91, .18);
+  --total-bg: rgba(255, 255, 255, .07); --bad: #e5737f; --good: #4ade80; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
-  --bg: #060606; --surface: #171717; --surface-2: #242424; --line: #292929; --line-strong: #3a3a3a;
+  --bg: #201e1e; --surface: #1b1919; --surface-2: #262323; --line: #312d2d; --line-strong: #433e3e;
   --text: #fafafa; --muted: #a3a3a3; --title: #ffffff;
-  --primary: #c71f37; --on-primary: #ffffff; --accent: #ff4d6a; --accent-2: #6ba3c9;
-  --accent-soft: rgba(255, 77, 106, .11); --glow: rgba(255, 77, 106, .2);
-  --total-bg: rgba(255, 255, 255, .07); --bad: #f87171; --good: #4ade80; color-scheme: dark;
+  --primary: #c71f37; --on-primary: #ffffff; --accent: #d1495b; --accent-2: #6ba3c9;
+  --accent-soft: rgba(209, 73, 91, .12); --glow: rgba(209, 73, 91, .18);
+  --total-bg: rgba(255, 255, 255, .07); --bad: #e5737f; --good: #4ade80; color-scheme: dark;
 }
 
 [hidden] { display: none !important; }
@@ -289,7 +289,7 @@ td.nao { color: var(--bad); font-weight: 700; } td.sim { color: var(--good); fon
 <script>/*MOTOR*/</script>
 <script>
 var PROTEGIDO = /*DADOS*/;
-try { var temaSalvo = localStorage.getItem("necorc-tema"); if (temaSalvo) document.documentElement.dataset.theme = temaSalvo; } catch (e) {}
+try { var temaSalvo = localStorage.getItem("necorc-tema"); document.documentElement.dataset.theme = temaSalvo || "light"; } catch (e) { document.documentElement.dataset.theme = "light"; }
 
 function iniciarApp(D, nomeUsuario, perfil) {
   "use strict";
